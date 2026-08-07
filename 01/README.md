@@ -2,27 +2,45 @@
 
 > Material práctico de la sesión. El libreto de las diapositivas está en `Clases/Clase 01/Libreto_Clase1_ClaudeDesign.md` (relativo a la raíz del curso, fuera de este repositorio).
 
-## Los datos no están versionados: se generan
+## Cómo crear los datos
 
-Este repositorio trae **código e instrucciones**, no los archivos de datos. Después de clonar, un comando los reconstruye todos:
+Los archivos de datos **no están en el repositorio**: se generan. Es el primer paso, antes de abrir el notebook.
 
-```
+Desde esta carpeta (`01/`):
+
+```bash
 python3 generar_muestras.py
 ```
 
-Produce `demo_chico.csv`, `muestra_A.geojson`, `muestra_B.ndjson`, `muestra_C_nodos.csv` y `muestra_C_aristas.csv`, y al terminar verifica que cada uno cumpla lo que el laboratorio espera de él (22 features, 300 eventos con 19 sin `pm25` / 12 con `-999` / 12 con batería, 15 nodos y 30 aristas, 1.000 viajes). Sin argumentos respeta los archivos que ya existan; con `--forzar` los sobrescribe.
+Eso produce las cinco muestras del laboratorio — `demo_chico.csv`, `muestra_A.geojson`, `muestra_B.ndjson`, `muestra_C_nodos.csv` y `muestra_C_aristas.csv` — y al terminar las verifica, imprimiendo algo así:
 
-`demo_grande.csv` no lo genera: ese sale de `generar_dataset_grande.py`, que llama el propio notebook.
+```
+Verificación OK: 22 features · 300 eventos (19 sin pm25, 12 con -999, 12 con batería) · 15 nodos y 30 aristas · 1.000 viajes
+```
 
-Las muestras A y C son fixtures fijas y van escritas como literales en el script, porque el laboratorio depende de su estructura exacta: la zona de restricción tiene que contener ciertas estaciones, y el grafo tiene que tener a "Rutas Inteligentes" como proyecto más conectado. La muestra B y `demo_chico.csv` usan semilla fija.
+Si no ves esa línea, algo falló y el notebook no va a funcionar. Sin argumentos respeta los archivos que ya existan; con `--forzar` los sobrescribe.
+
+Falta un archivo más, el dataset grande de la Parte 1, que `generar_muestras.py` **no** genera porque pesa demasiado:
+
+```bash
+python3 generar_dataset_grande.py 2000000    # 2M filas, ~120 MB, cerca de un minuto
+python3 generar_dataset_grande.py            # 10M filas, ~600 MB, unos minutos
+```
+
+No hace falta correrlo a mano: el propio notebook lo genera en su celda correspondiente, con 2M filas. Hacerlo antes solo te ahorra la espera en clase.
+
+Desde cero, partiendo de nada:
+
+```bash
+git clone https://github.com/diegoalrv/ein102b.git && cd ein102b/01 && python3 generar_muestras.py
+```
+
+> Las muestras A y C son fixtures fijas y van escritas como literales en el script, porque el laboratorio depende de su estructura exacta: la zona de restricción tiene que contener ciertas estaciones, y el grafo tiene que tener a "Rutas Inteligentes" como proyecto más conectado. La muestra B y `demo_chico.csv` usan semilla fija, así que también son iguales en todas las máquinas.
 
 ## Demo comparativa (bloque 2, 08:50–09:25)
 
-- `generar_muestras.py` — reconstruye todos los datos del lab (ver arriba).
 - `demo_chico.csv` — 1.000 viajes simulados (Gran Valparaíso), ~55 KB.
-- `generar_dataset_grande.py` — genera `demo_grande.csv`. **Ejecutar antes de la clase.**
-  - `python3 generar_dataset_grande.py` → 10M filas, ~600 MB, unos minutos. Es la corrida **proyectada**.
-  - `python3 generar_dataset_grande.py 2000000` → 2M filas, ~120 MB, cerca de un minuto. Es lo que corren los equipos.
+- `demo_grande.csv` — el mismo esquema a otra escala. 10M filas es la corrida **proyectada**; 2M es lo que corren los equipos (ver *Cómo crear los datos*). **Generarlo antes de la clase.**
 - `demo_comparativa.py` — corre la misma consulta (promedio de duración por zona de origen) sobre cualquiera de los dos archivos e imprime tiempo de carga, tiempo de consulta y memoria pico. Requiere `pandas`.
 
 Secuencia en clase: pedir predicciones → correr con `demo_chico.csv` → correr con `demo_grande.csv` → completar la tabla de la diapositiva 10.

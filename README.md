@@ -8,15 +8,13 @@ Código e instrucciones de los laboratorios del curso. Un directorio por laborat
 |---|---|---|
 | [`01/`](01/) | Vie 07-ago-2026 | Fuentes de datos masivos: escala, geoespacial, streams y grafos |
 
-## Los datos no están versionados: se generan
-
-El `.gitignore` excluye `*.csv`, `*.ndjson` y `*.geojson`. Cada laboratorio trae su propio generador con semilla fija, así que clonar y correr un comando basta:
+## Empezar
 
 ```bash
-cd 01 && python3 generar_muestras.py
+git clone https://github.com/diegoalrv/ein102b.git && cd ein102b/01 && python3 generar_muestras.py
 ```
 
-El generador verifica los datos que produce y falla ruidosamente si algo no cuadra con lo que el laboratorio espera.
+Los datos no están versionados: el `.gitignore` excluye `*.csv`, `*.ndjson` y `*.geojson`, y cada laboratorio trae su propio generador con semilla fija. El generador verifica lo que produce y falla ruidosamente si algo no cuadra, así que si termina sin la línea `Verificación OK`, no sigas. Las instrucciones completas están en el README de cada laboratorio.
 
 ## Requisitos
 
@@ -25,4 +23,4 @@ El generador verifica los datos que produce y falla ruidosamente si algo no cuad
 
 ## Versión docente
 
-Los notebooks `*_docente.ipynb` traen las soluciones resueltas y las respuestas esperadas. **No distribuir a los equipos** — este repositorio es privado por esa razón.
+Los notebooks `*_docente.ipynb` traen las soluciones resueltas y las respuestas esperadas de la cátedra. Son la referencia del profesor: se aprende bastante más intentando los ejercicios primero.
