@@ -1,0 +1,19 @@
+# Datos: no se versionan. Ver 01/README.md para qué archivos hay que dejar en cada carpeta.
+*.csv
+*.ndjson
+*.geojson
+*.parquet
+*.jsonl
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local
+.claude/
+.DS_Store
