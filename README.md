@@ -8,9 +8,15 @@ Código e instrucciones de los laboratorios del curso. Un directorio por laborat
 |---|---|---|
 | [`01/`](01/) | Vie 07-ago-2026 | Fuentes de datos masivos: escala, geoespacial, streams y grafos |
 
-## Los datos no están versionados
+## Los datos no están versionados: se generan
 
-El `.gitignore` excluye `*.csv`, `*.ndjson` y `*.geojson`. Cada laboratorio documenta en su propio README qué archivos hay que dejar en la carpeta antes de correr los notebooks, y cuáles se generan solos.
+El `.gitignore` excluye `*.csv`, `*.ndjson` y `*.geojson`. Cada laboratorio trae su propio generador con semilla fija, así que clonar y correr un comando basta:
+
+```bash
+cd 01 && python3 generar_muestras.py
+```
+
+El generador verifica los datos que produce y falla ruidosamente si algo no cuadra con lo que el laboratorio espera.
 
 ## Requisitos
 

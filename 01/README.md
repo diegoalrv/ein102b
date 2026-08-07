@@ -2,16 +2,23 @@
 
 > Material práctico de la sesión. El libreto de las diapositivas está en `Clases/Clase 01/Libreto_Clase1_ClaudeDesign.md` (relativo a la raíz del curso, fuera de este repositorio).
 
-## ⚠️ Los datos no están versionados
+## Los datos no están versionados: se generan
 
-Este repositorio trae **código e instrucciones**, no los archivos de datos. Antes de correr los notebooks hay que dejar en esta misma carpeta:
+Este repositorio trae **código e instrucciones**, no los archivos de datos. Después de clonar, un comando los reconstruye todos:
 
-`demo_chico.csv` · `muestra_A.geojson` · `muestra_B.ndjson` · `muestra_C_nodos.csv` · `muestra_C_aristas.csv`
+```
+python3 generar_muestras.py
+```
 
-(`demo_grande.csv` no se copia: lo genera el propio notebook.)
+Produce `demo_chico.csv`, `muestra_A.geojson`, `muestra_B.ndjson`, `muestra_C_nodos.csv` y `muestra_C_aristas.csv`, y al terminar verifica que cada uno cumpla lo que el laboratorio espera de él (22 features, 300 eventos con 19 sin `pm25` / 12 con `-999` / 12 con batería, 15 nodos y 30 aristas, 1.000 viajes). Sin argumentos respeta los archivos que ya existan; con `--forzar` los sobrescribe.
+
+`demo_grande.csv` no lo genera: ese sale de `generar_dataset_grande.py`, que llama el propio notebook.
+
+Las muestras A y C son fixtures fijas y van escritas como literales en el script, porque el laboratorio depende de su estructura exacta: la zona de restricción tiene que contener ciertas estaciones, y el grafo tiene que tener a "Rutas Inteligentes" como proyecto más conectado. La muestra B y `demo_chico.csv` usan semilla fija.
 
 ## Demo comparativa (bloque 2, 08:50–09:25)
 
+- `generar_muestras.py` — reconstruye todos los datos del lab (ver arriba).
 - `demo_chico.csv` — 1.000 viajes simulados (Gran Valparaíso), ~55 KB.
 - `generar_dataset_grande.py` — genera `demo_grande.csv`. **Ejecutar antes de la clase.**
   - `python3 generar_dataset_grande.py` → 10M filas, ~600 MB, unos minutos. Es la corrida **proyectada**.
