@@ -23,4 +23,4 @@ Los datos no están versionados: el `.gitignore` excluye `*.csv`, `*.ndjson` y `
 
 ## Versión docente
 
-Los notebooks `*_docente.ipynb` traen las soluciones resueltas y las respuestas esperadas de la cátedra. Son la referencia del profesor: se aprende bastante más intentando los ejercicios primero.
+Los notebooks `*_docente.ipynb` — con las soluciones y las respuestas esperadas de la cátedra — no se versionan: el `.gitignore` los excluye. Este repositorio trae solo el material del laboratorio.

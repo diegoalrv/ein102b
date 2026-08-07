@@ -5,6 +5,9 @@
 *.parquet
 *.jsonl
 
+# Versiones docentes: soluciones y respuestas esperadas, no van al repo público
+*_docente.ipynb
+
 # Jupyter
 .ipynb_checkpoints/
 

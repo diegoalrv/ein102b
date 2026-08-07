@@ -57,8 +57,9 @@ Entregar a los equipos **sin decir de qué tipo son** (la revelación es en la c
 
 ## Notebooks
 
-- `lab01_estudiantes.ipynb` — el que reciben los equipos. 11 celdas con `# Escribe tu código aquí`, sin soluciones.
-- `lab01_docente.ipynb` — **no distribuir**: mismas consignas con las soluciones resueltas, tiempos por bloque y respuestas esperadas.
+- `lab01_estudiantes.ipynb` — el del laboratorio. 11 celdas con `# Escribe tu código aquí`.
+
+La versión docente (soluciones, tiempos por bloque y respuestas esperadas) no está en este repositorio.
 
 ## Checklist restante (de la página de Notion)
 
