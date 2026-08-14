@@ -35,7 +35,7 @@ Desde cero, partiendo de nada:
 git clone https://github.com/diegoalrv/ein102b.git && cd ein102b/01 && python3 generar_muestras.py
 ```
 
-> Las muestras A y C son fixtures fijas y van escritas como literales en el script, porque el laboratorio depende de su estructura exacta: la zona de restricción tiene que contener ciertas estaciones, y el grafo tiene que tener a "Rutas Inteligentes" como proyecto más conectado. La muestra B y `demo_chico.csv` usan semilla fija, así que también son iguales en todas las máquinas.
+> Las muestras A y C son fixtures fijas y van escritas como literales en el script, porque el laboratorio depende de su estructura exacta: la zona de restricción **no contiene ninguna estación** (verificado con PostGIS 3.4; es a propósito, el Ej. 3.1 del Lab 02 lo usa para discutir *resultado vacío ≠ consulta mala*, y la ruta sí la cruza), y el grafo tiene que tener a "Rutas Inteligentes" como proyecto más conectado. La muestra B y `demo_chico.csv` usan semilla fija, así que también son iguales en todas las máquinas.
 
 ## Demo comparativa (bloque 2, 08:50–09:25)
 
@@ -51,7 +51,7 @@ Secuencia en clase: pedir predicciones → correr con `demo_chico.csv` → corre
 
 Entregar a los equipos **sin decir de qué tipo son** (la revelación es en la cátedra, diapositiva 14):
 
-- `muestra_A.geojson` — geoespacial: 20 estaciones de monitoreo (puntos) + 1 zona (polígono) + 1 ruta (línea).
+- `muestra_A.geojson` — geoespacial: 20 estaciones de monitoreo (puntos) + 1 zona (polígono) + 1 ruta (línea). La columna `comuna` está asignada sin cuidado: no coincide ni con el nombre de la estación ni con dónde cae el punto (Muelle Prat figura en Quilpué; "Curauma" cae a ~12 km de Curauma). Sirve para practicar `GROUP BY`, no para creerle — declararlo en clase si alguien lo nota, y guardarlo como pregunta del bloque geoespacial (¿el atributo coincide con la geometría?).
 - `muestra_B.ndjson` — stream de sensores: 300 eventos **desordenados en el tiempo**, con lecturas perdidas, valores de error (-999) y campos que solo algunos sensores envían. Esas imperfecciones son a propósito: son lo que rompe el modelo relacional.
 - `muestra_C_nodos.csv` + `muestra_C_aristas.csv` — grafo: 15 nodos (personas, organizaciones y proyectos) y 30 aristas conectadas por TRABAJA_EN, PARTICIPA_EN, COLABORA_CON y FINANCIA.
 
