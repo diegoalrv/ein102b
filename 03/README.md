@@ -96,6 +96,6 @@ Las imágenes pueden quedar: la del lab se reutiliza el 28-ago con los índices 
 - [ ] Descargar el ZIP de la DPA 2023 (~311 MB) y dejarlo en `datos_fuente/` **en cada máquina** del Lab. de Informática 2, antes del viernes
 - [ ] En cada máquina: `docker pull postgis/postgis:16-3.4-alpine` y `python3 preparar_datos.py` (deja `datos/COMUNAS.*` y `datos/comunas_cl.sql` listos; necesita red)
 - [ ] Verificar que la imagen `postgis/postgis:16-3.4` siga descargada tras la limpieza del 14-ago
-- [ ] Generar diapositivas con el libreto (`Clases/Clase 03/Libreto_Clase3_ClaudeDesign.md`) en Claude Design — **ojo**: revisar que el libreto no afirme 346 comunas ni 27 geometrías inválidas ni "17 filas" (números pre-verificación)
+- [ ] Generar diapositivas con el libreto (`Clases/Clase 03/Libreto_Clase3_ClaudeDesign.md`) en Claude Design — el libreto ya quedó corregido el 20-ago con los números verificados (345 comunas, carga `5360:5361`, UTF-8, 4 estaciones al mar)
 - [x] Correr el notebook docente de punta a punta con el ZIP oficial (hecho el 20-ago; incluye Docker y el SQL de `shp2pgsql`)
 - [x] Confirmar el SRID que reporta `preparar_datos.py` (5360 geográfico; la carga reproyecta a 5361 y `SRID_ORIGEN` ya no existe en el notebook)
