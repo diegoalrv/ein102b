@@ -30,6 +30,43 @@ Si no ves esas líneas, algo falló y el notebook no va a funcionar. Sin argumen
 
 > ⚠️ **Todo esto va ANTES de la clase, en cada máquina.** El ZIP son **~311 MB** desde geoportal.cl, y la imagen alpine otros ~90 MB: 25 equipos bajándolos a las 08:30 saturan la red del laboratorio — exactamente el problema del 14-ago con la imagen de Docker. Por eso el script **no** descarga el ZIP por su cuenta, y por eso `comunas_cl.sql` se genera en la preparación: en clase, la carga es un `psql -f` sin red.
 
+### Camino alternativo: sin `preparar_datos.py`
+
+Si el paso de Docker falla, o no se quiere arrastrar un SQL de 218 MB por máquina, el shapefile se puede cargar directo instalando las utilidades de cliente **dentro del contenedor del laboratorio** — `postgis/postgis:16-3.4` trae el motor pero no `shp2pgsql`:
+
+```bash
+docker exec -u root pmd-postgis bash -c 'apt-get update && apt-get install -y --no-install-recommends postgis'
+docker exec pmd-postgis shp2pgsql -? 2>&1 | head -2   # debe imprimir la ayuda
+```
+
+Después va el shapefile **completo** (no solo el `.shp`: sin el `.dbf` no hay atributos, sin el `.prj` no hay SRID y sin el `.cpg` no hay codificación):
+
+```bash
+for e in shp dbf shx prj cpg; do docker cp datos/COMUNAS.$e pmd-postgis:/tmp/; done
+```
+
+Y la carga, reproyectando de 5360 (grados) a 5361 (UTM 19S, metros) como hace el camino oficial:
+
+```bash
+docker exec pmd-postgis bash -c \
+  "shp2pgsql -s 5360:5361 -I -W UTF-8 -g geom /tmp/COMUNAS public.comunas_cl \
+   | psql -v ON_ERROR_STOP=1 -U postgres -d postgres"
+```
+
+Verificación (debe dar `345 | 38 | 5361`):
+
+```bash
+docker exec pmd-postgis psql -U postgres -d postgres -c \
+  "SELECT count(*) AS comunas,
+          count(*) FILTER (WHERE cut_reg = '05') AS valparaiso,
+          ST_SRID(geom) AS srid
+   FROM public.comunas_cl GROUP BY 3;"
+```
+
+Dos detalles que muerden: el `-W` lo dicta el `.cpg` (aquí **UTF-8**; con `LATIN1` los nombres con tilde salen rotos), y `cut_reg` es **texto**, de ahí el `'05'` entre comillas.
+
+Este camino igual necesita red: el `apt-get` baja paquetes en cada máquina. Sirve para preparar o rescatar un equipo suelto, no para los 25 a las 08:30 — para eso sigue estando `preparar_datos.py` y el `psql -f` sin red. Y saltarse `preparar_datos.py` también se salta su verificación: los 345/38/SRID de arriba son el reemplazo mínimo.
+
 Además se reutiliza la muestra A del Lab 01 (`../01/muestra_A.geojson`). Si falta:
 
 ```bash
