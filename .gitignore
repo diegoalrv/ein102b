@@ -5,6 +5,20 @@
 *.parquet
 *.jsonl
 
+# Lab 03: datos públicos reales (DPA 2023 de datos.gob.cl). El ZIP oficial va en
+# 03/datos_fuente/ y preparar_datos.py extrae el shapefile a 03/datos/. Ninguno
+# de los dos se versiona: se descarga una vez por máquina. Ver 03/README.md.
+03/datos_fuente/
+03/datos/
+*.zip
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.sbn
+*.sbx
+
 # Versiones docentes: soluciones y respuestas esperadas, no van al repo público
 *_docente.ipynb
 
