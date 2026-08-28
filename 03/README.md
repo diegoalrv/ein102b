@@ -1,6 +1,6 @@
 # Laboratorio 03 — Clase 3 (Vie 21-ago): Representación de datos geoespaciales
 
-> Material práctico de la sesión. El libreto de las diapositivas está en `Clases/Clase 03/Libreto_Clase3_ClaudeDesign.md` (relativo a la raíz del curso, fuera de este repositorio).
+> Material práctico de la sesión. El libreto de las diapositivas está en `Clases/Clase 3 (2108)/Clase 3 (2108) — Libreto.md` (relativo a la raíz del curso, fuera de este repositorio).
 
 Primera sesión del bloque geoespacial. Se salda la deuda del Lab 02: la columna `comuna` de la muestra A estaba inventada, y hoy se verifica contra las comunas oficiales de Chile.
 
@@ -133,6 +133,6 @@ Las imágenes pueden quedar: la del lab se reutiliza el 28-ago con los índices 
 - [ ] Descargar el ZIP de la DPA 2023 (~311 MB) y dejarlo en `datos_fuente/` **en cada máquina** del Lab. de Informática 2, antes del viernes
 - [ ] En cada máquina: `docker pull postgis/postgis:16-3.4-alpine` y `python3 preparar_datos.py` (deja `datos/COMUNAS.*` y `datos/comunas_cl.sql` listos; necesita red)
 - [ ] Verificar que la imagen `postgis/postgis:16-3.4` siga descargada tras la limpieza del 14-ago
-- [ ] Generar diapositivas con el libreto (`Clases/Clase 03/Libreto_Clase3_ClaudeDesign.md`) en Claude Design — el libreto ya quedó corregido el 20-ago con los números verificados (345 comunas, carga `5360:5361`, UTF-8, 4 estaciones al mar)
+- [ ] Generar diapositivas con el libreto (`Clases/Clase 3 (2108)/Clase 3 (2108) — Libreto.md`) en Claude Design — el libreto ya quedó corregido el 20-ago con los números verificados (345 comunas, carga `5360:5361`, UTF-8, 4 estaciones al mar)
 - [x] Correr el notebook docente de punta a punta con el ZIP oficial (hecho el 20-ago; incluye Docker y el SQL de `shp2pgsql`)
 - [x] Confirmar el SRID que reporta `preparar_datos.py` (5360 geográfico; la carga reproyecta a 5361 y `SRID_ORIGEN` ya no existe en el notebook)
