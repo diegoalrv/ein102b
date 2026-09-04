@@ -19,6 +19,15 @@
 *.sbn
 *.sbx
 
+# Lab 05: el extracto de OpenStreetMap (Geofabrik) va en 05/datos_fuente/ y
+# preparar_datos.py deja el GeoPackage recortado en 05/datos/, junto con las
+# salidas del notebook (GeoPackage, GeoJSON, pg_dump). Nada de eso se versiona.
+05/datos_fuente/
+05/datos/
+*.osm.pbf
+*.gpkg
+*.dump
+
 # Versiones docentes: soluciones y respuestas esperadas, no van al repo público
 *_docente.ipynb
 

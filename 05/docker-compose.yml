@@ -1,0 +1,36 @@
+# Laboratorio 05 — la infraestructura del bloque geoespacial, declarada en un archivo.
+#
+# Hasta hoy el contenedor se levantaba con un `docker run` de cinco flags escrito
+# a mano (Lab 02). Esto es lo mismo, pero declarado: se versiona, se lee y se
+# levanta con un solo comando. Es exactamente lo que el proyecto semestral exige.
+#
+#     docker compose build          # una vez, antes de la clase (necesita red)
+#     docker compose up -d --wait   # levantar y esperar a que PostgreSQL responda
+#     docker compose ps             # ¿qué está corriendo?
+#     docker compose exec db psql -U postgres
+#     docker compose down           # apagar y borrar el contenedor (los datos quedan en el volumen)
+#     docker compose down -v        # ... y borrar también el volumen (limpieza de máquina compartida)
+
+services:
+  db:
+    build: .                        # el Dockerfile de esta carpeta: PostGIS + gdal-bin
+    image: pmd-postgis-gdal
+    container_name: pmd-postgis     # el mismo nombre de siempre: los notebooks anteriores siguen funcionando
+    environment:
+      POSTGRES_PASSWORD: pmd2026
+    ports:
+      - "5433:5432"                 # host:contenedor, como en el Lab 02
+    volumes:
+      - pmd-pgdata:/var/lib/postgresql/data   # el volumen con nombre: la memoria que sobrevive
+      - ./datos:/datos                        # el GeoPackage de entrada y los archivos de salida
+      - ../01:/labs/01:ro                     # muestra_A.geojson (Lab 01), para reconstruir `estaciones`
+      - ../03/datos:/labs/03:ro               # comunas_cl.sql (Lab 03), para reconstruir `comunas_cl`
+    healthcheck:                    # `up --wait` espera a que esto pase
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pmd-pgdata:
+    name: pmd-pgdata                # sin `name:` compose lo llamaría 05_pmd-pgdata
