@@ -16,7 +16,7 @@ Tres cosas que deben existir **antes** de la clase, en cada máquina:
 | `../03/datos/comunas_cl.sql` | Lab 03 | `cd ../03 && python3 preparar_datos.py` (necesita el ZIP de la DPA en `03/datos_fuente/`) |
 | `datos/osm_gran-valparaiso.gpkg` | **nuevo**: extracto de OSM | `python3 preparar_datos.py` (necesita `chile-latest.osm.pbf` en `datos_fuente/`) — o copiar el `.gpkg` ya generado en otra máquina |
 
-Y la imagen `pmd-postgis-gdal`, que se construye una vez con `docker compose build` (el `Dockerfile` de esta carpeta: el PostGIS de siempre + `gdal-bin` + las utilidades de cliente de PostGIS). `preparar_datos.py` la construye solo si no encuentra `ogr2ogr` en la máquina; si la máquina tiene GDAL instalado, hay que correr `docker compose build` a mano igual, porque el notebook usa `ogr2ogr` **dentro del contenedor**.
+Y la imagen `pmd-postgis-gdal`, que se construye una vez con `docker compose build` (el `Dockerfile` de esta carpeta: PostgreSQL 16 sobre Debian bookworm + PostGIS + `gdal-bin` + las utilidades de cliente de PostGIS). `preparar_datos.py` la construye solo si no encuentra `ogr2ogr` en la máquina; si la máquina tiene GDAL instalado, hay que correr `docker compose build` a mano igual, porque el notebook usa `ogr2ogr` **dentro del contenedor**.
 
 ### El extracto de OpenStreetMap
 
@@ -63,7 +63,7 @@ python3 preparar_datos.py --bbox -70.75 -33.52 -70.52 -33.36 --nombre mi-zona
 
 ## Convenciones
 
-Las mismas desde el Lab 02 — contenedor `pmd-postgis` · puerto **5433** · volumen `pmd-pgdata` · `postgres`/`pmd2026`/`postgres` — pero ahora declaradas en `docker-compose.yml` en vez de escritas en un `docker run`. La imagen cambia: `pmd-postgis-gdal`, construida desde `postgis/postgis:16-3.4`. El nombre del contenedor y del volumen se mantienen a propósito: los notebooks de los labs anteriores siguen funcionando contra este contenedor.
+Casi las mismas desde el Lab 02 — contenedor `pmd-postgis` · volumen `pmd-pgdata` · `postgres`/`pmd2026`/`postgres` — pero ahora declaradas en `docker-compose.yml` en vez de escritas en un `docker run`. Dos cambios: el **puerto** del host pasa de 5433 a **5434**, y la imagen es `pmd-postgis-gdal`, construida desde `postgres:16-bookworm` con PostGIS (`postgresql-16-postgis-3`) y `gdal-bin`. El nombre del contenedor y del volumen se mantienen a propósito: los notebooks de los labs anteriores siguen funcionando contra este contenedor cambiando su `URL` al puerto 5434.
 
 El contenedor **ve** tres carpetas de la máquina (montajes en el compose): `./datos` → `/datos`, `../01` → `/labs/01` y `../03/datos` → `/labs/03`. Se acabó el `docker cp`.
 
@@ -133,7 +133,7 @@ Borra el contenedor y el volumen `pmd-pgdata`. La **imagen** y `datos/osm_gran-v
 - **Imagen no construida:** sin `gdal-bin` no hay `ogrinfo`/`ogr2ogr` → usar el camino de rescate (`--sql` + `psql -f`) y saltar 1.1, 1.2 y 4.2.
 - **Disco:** el `.gpkg` más las tablas (crudas + derivadas + índices) más `comunas_cl` pueden sumar 1–2 GB por máquina. Si aprieta, `preparar_datos.py --bbox` con una caja más chica (por ejemplo solo Valparaíso–Viña: `-71.68 -33.10 -71.48 -32.95`) y **anotarlo**; las conclusiones no cambian.
 - **Extracto distinto por máquina:** `chile-latest` cambia a diario. Si las máquinas se prepararon en días distintos, los conteos difieren entre equipos. Es deseable decirlo antes de que alguien crea que se equivocó — y es un buen pie para el bloque de streaming: el dato que cargamos es una **foto** de algo que cambia todo el tiempo.
-- **Puerto 5433 ocupado / volumen de otro proyecto:** compose usa `container_name` y `name:` fijos, así que convive con lo que dejaron los labs anteriores. Si hay otro contenedor `pmd-postgis` levantado con la imagen vieja, `compose up` lo recrea con la nueva (los datos del volumen se conservan).
+- **Puerto 5434 ocupado / volumen de otro proyecto:** compose usa `container_name` y `name:` fijos, así que convive con lo que dejaron los labs anteriores. Si hay otro contenedor `pmd-postgis` levantado con la imagen vieja, `compose up` lo recrea con la nueva (los datos del volumen se conservan; si el volumen se creó con la imagen `postgis/postgis:16-3.4` de los labs anteriores, PostgreSQL avisa *collation version mismatch*: es inofensivo y desaparece con `docker compose down -v`).
 
 ## Checklist previa del profesor
 

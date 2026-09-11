@@ -26,7 +26,7 @@ Los datos no están versionados: el `.gitignore` excluye `*.csv`, `*.ndjson` y `
 - Docker (se usa durante todo el semestre — conviene verificar `docker run hello-world` antes de la primera sesión)
 - Desde el Lab 02: `sqlalchemy` y `psycopg2-binary` (`pip install sqlalchemy psycopg2-binary`)
 - Desde el Lab 03: la imagen `postgis/postgis:16-3.4-alpine` (~90 MB) — `preparar_datos.py` corre desde ahí el cargador de shapefiles `shp2pgsql`, que la imagen del lab no trae
-- Desde el Lab 05: `docker compose` (viene con Docker Desktop) y la imagen `pmd-postgis-gdal`, que se construye una vez con `docker compose build` en `05/` (el PostGIS de siempre más `gdal-bin`; necesita red esa única vez)
+- Desde el Lab 05: `docker compose` (viene con Docker Desktop) y la imagen `pmd-postgis-gdal`, que se construye una vez con `docker compose build` en `05/` (PostgreSQL 16 sobre Debian bookworm con PostGIS y `gdal-bin`, en el puerto 5434; necesita red esa única vez)
 
 ## Versión docente
 

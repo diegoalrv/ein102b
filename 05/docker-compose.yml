@@ -19,7 +19,7 @@ services:
     environment:
       POSTGRES_PASSWORD: pmd2026
     ports:
-      - "5433:5432"                 # host:contenedor, como en el Lab 02
+      - "5434:5432"                 # host:contenedor (en los Labs 02–04 era 5433)
     volumes:
       - pmd-pgdata:/var/lib/postgresql/data   # el volumen con nombre: la memoria que sobrevive
       - ./datos:/datos                        # el GeoPackage de entrada y los archivos de salida
