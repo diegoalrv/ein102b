@@ -1,0 +1,24 @@
+# Laboratorio 06 — camino de rescate: un Redis propio, en esta máquina.
+#
+# Solo hace falta si el stream compartido del VPS no conecta. El notebook lo
+# levanta solo (Parte 0); a mano sería:
+#
+#     docker compose up -d --wait   # levantar y esperar a que Redis responda
+#     docker compose exec redis redis-cli
+#     docker compose down           # apagar y borrar (no hay volumen: no queda nada)
+#
+# Sin volumen, a propósito: es efímero. Al apagarlo, el stream desaparece —
+# lo mismo que pasa con cualquier Redis sin RDB/AOF (CONTENTS.md, sección 2.1).
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: pmd-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:                    # `up --wait` espera a que esto pase
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15

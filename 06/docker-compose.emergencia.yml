@@ -1,0 +1,52 @@
+# Laboratorio 06 — servidor de EMERGENCIA en el PC del profesor.
+#
+# Reemplaza al VPS si se cae o la red no lo alcanza: el mismo Redis (misma ACL)
+# y el mismo generador, pero en la red local del laboratorio, sin TLS.
+#
+#   1. Levantar (necesita internet una vez, para `pip install redis` en el generador):
+#        GEN_PASS=<cualquier clave> docker compose -f docker-compose.emergencia.yml up -d --wait
+#      (la clave de los alumnos, VPS_PASS, la toma sola del .env de esta carpeta)
+#   2. La IP de este PC:   macOS: ipconfig getifaddr en0   ·   Windows: ipconfig   ·   Linux: hostname -I
+#   3. Probar desde otro PC:  redis-cli -h <IP> -p 6379 -a <VPS_PASS> XLEN sensores:flujo
+#   4. Los equipos cambian en su .env:  VPS_HOST=<IP>  y  VPS_PORT=6379,
+#      reinician el kernel y ejecutan desde el principio.
+#   Apagar:  docker compose -p pmd-emergencia down
+#
+# Windows: aceptar el aviso del firewall (o abrir el puerto TCP 6379 entrante).
+# Si el generador no puede instalar redis (sin internet), correrlo desde el venv del lab:
+#   REDIS_URL=redis://generador:<GEN_PASS>@127.0.0.1:6379 python generador.py
+
+name: pmd-emergencia
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: pmd-redis-emergencia
+    ports:
+      - "6379:6379"
+    command: [
+      "redis-server", "--save", "", "--appendonly", "no",
+      # alumnos (usuario default): todo menos borrar/ensuciar el stream compartido — igual que en el VPS
+      "--user", "default", "on", ">${VPS_PASS:?falta VPS_PASS en el .env}", "~*", "&*", "+@all", "-@dangerous",
+      "-del", "-unlink", "-xadd", "-xtrim", "-xdel", "-expire", "-pexpire", "-rename",
+      "-xgroup|destroy", "-xgroup|setid", "-xgroup|delconsumer",
+      "--user", "generador", "on", ">${GEN_PASS:?falta GEN_PASS}", "~*", "&*", "+@all",
+    ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "--user", "generador", "--pass", "${GEN_PASS}", "--no-auth-warning", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  generador:
+    image: python:3.12-slim
+    container_name: pmd-generador-emergencia
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_URL: redis://generador:${GEN_PASS}@redis:6379
+    volumes:
+      - ./generador.py:/g.py:ro
+    command: ["sh", "-c", "pip install -q --root-user-action=ignore redis && exec python -u /g.py"]
+    restart: unless-stopped

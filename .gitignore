@@ -40,6 +40,9 @@ __pycache__/
 .venv/
 venv/
 
+# Claves y conexiones (Lab 06 en adelante): el .env no se versiona; .env.example sí
+.env
+
 # Local
 .claude/
 .DS_Store
