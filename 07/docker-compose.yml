@@ -1,0 +1,32 @@
+# Laboratorio 07 — HBase standalone, en esta máquina.
+#
+#     docker compose build          # una vez, antes de la clase (necesita red: ~340 MB)
+#     docker compose up -d --wait   # levantar y esperar a que HBase responda (~30-60 s)
+#     docker compose exec hbase hbase shell
+#     docker compose down           # apagar (los datos quedan en el volumen)
+#     docker compose down -v        # ... y borrar también el volumen
+#
+# Con volumen, a propósito: al revés que el Redis del Lab 06. HBase es la base
+# "en disco": apagarla y prenderla no pierde nada (Ejercicio 3.3).
+
+services:
+  hbase:
+    build: .
+    image: pmd-hbase
+    container_name: pmd-hbase
+    hostname: pmd-hbase             # HBase registra su nombre de host en ZooKeeper: que sea fijo
+    ports:
+      - "9090:9090"                 # Thrift: happybase
+      - "16010:16010"               # interfaz web del HMaster: http://localhost:16010
+    volumes:
+      - pmd-hbase:/data
+    healthcheck:                    # `up --wait` espera a que la tabla de sistema hbase:meta esté en línea
+      test: ["CMD-SHELL", "echo \"exists 'hbase:meta'\" | hbase shell -n 2>/dev/null | grep -q 'does exist'"]
+      interval: 10s
+      timeout: 30s
+      retries: 18
+      start_period: 20s
+
+volumes:
+  pmd-hbase:
+    name: pmd-hbase
