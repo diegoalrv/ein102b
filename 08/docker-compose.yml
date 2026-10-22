@@ -1,0 +1,31 @@
+# Laboratorio 08 — Neo4j 5 Community, en esta máquina.
+#
+#     docker pull neo4j:5-community   # una vez, antes de abrir el notebook (~350 MB de descarga)
+#     docker compose up -d --wait     # levantar y esperar a que acepte consultas (~30-60 s)
+#     open http://localhost:7474      # Neo4j Browser · usuario neo4j · clave pmd2026neo
+#     docker compose down -v          # apagar y borrar el volumen (el script lo recarga en ~1 min)
+
+services:
+  neo4j:
+    image: neo4j:5-community
+    container_name: pmd-neo4j
+    ports:
+      - "7474:7474"                 # Neo4j Browser (HTTP)
+      - "7687:7687"                 # Bolt: por donde hablan el driver de Python y cypher-shell
+    environment:
+      NEO4J_AUTH: neo4j/pmd2026neo  # Neo4j 5 exige >= 8 caracteres. Solo se aplica al crear el volumen.
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    volumes:
+      - pmd-neo4jdata:/data
+      - ./import:/var/lib/neo4j/import   # para LOAD CSV (Clase 12)
+    healthcheck:                    # `up --wait` espera a que Bolt responda de verdad
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p pmd2026neo 'RETURN 1' >/dev/null 2>&1 || exit 1"]
+      interval: 10s                 # cada chequeo levanta una JVM: no más seguido (como en el Lab 07)
+      timeout: 15s
+      retries: 15                   # ~2,5-3 min hasta declararlo unhealthy (p. ej., volumen viejo con otra clave)
+      start_period: 15s
+
+volumes:
+  pmd-neo4jdata:
+    name: pmd-neo4jdata
