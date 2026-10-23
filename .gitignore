@@ -1,5 +1,7 @@
 # Datos: no se versionan. Ver 01/README.md para qué archivos hay que dejar en cada carpeta.
 *.csv
+# Lab 09: 4 CSV sintéticos de pocas líneas para LOAD CSV; se versionan para que el lab funcione sin descargas.
+!09/import/*.csv
 *.ndjson
 *.geojson
 *.parquet

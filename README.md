@@ -14,6 +14,7 @@ Código e instrucciones de los laboratorios del curso. Un directorio por laborat
 | [`06/`](06/) | Vie 25-sep y 02-oct-2026 | Redis: estructuras en memoria, Pub/Sub y Streams con consumer groups, contra un stream compartido en vivo |
 | [`07/`](07/) | Vie 09-oct-2026 | HBase: modelo de datos, la row key como índice, *hotspotting* y el camino de escritura (LSM) en disco |
 | [`08/`](08/) | Vie 23-oct-2026 | Neo4j I: el grafo de propiedades y Cypher — patrones de uno y varios saltos, CREATE/MERGE — sobre una red de paradas del Gran Concepción |
+| [`09/`](09/) | Vie 30-oct-2026 | Neo4j II: shortestPath y caminos ponderados con reduce, agregaciones y NOT EXISTS, PROFILE e índices, carga idempotente con LOAD CSV + MERGE |
 
 ## Empezar
 
@@ -33,6 +34,7 @@ Los datos no están versionados: el `.gitignore` excluye `*.csv`, `*.ndjson` y `
 - Lab 06: `redis`, `pandas` y `pyarrow` (`pip install -r 06/requirements.txt`)
 - Lab 07: `happybase` (`pip install -r 07/requirements.txt`) y la imagen `pmd-hbase`, que se construye una vez con `docker compose build` en `07/` (HBase 2.5.15 standalone; descarga ~340 MB y pide ~4 GB de RAM para Docker)
 - Lab 08: el driver `neo4j` (`pip install -r 08/requirements.txt`) y la imagen `neo4j:5-community` (~350 MB de descarga, ~1 GB en disco; `docker pull neo4j:5-community` antes de abrir el notebook)
+- Lab 09: lo mismo que el Lab 08 (`pip install -r 09/requirements.txt` y la imagen `neo4j:5-community`)
 
 ## Versión docente
 
