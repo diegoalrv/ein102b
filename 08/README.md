@@ -15,7 +15,7 @@ Primera sesión del bloque de grafos. Con Redis y HBase preguntábamos por clave
   docker pull neo4j:5-community    # ~350 MB de descarga, ~1 GB en disco
   ```
 
-- Python con el driver `neo4j`, `pandas` y `matplotlib`, en un ambiente virtual:
+- Python con el driver `neo4j`, `pandas`, `matplotlib` y `networkx`, en un ambiente virtual (la primera celda del notebook también los instala):
 
   ```bash
   python3 -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
