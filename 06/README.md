@@ -17,10 +17,17 @@ Primera sesión del bloque de streaming: estructuras de Redis, Pub/Sub (que pier
 - **Docker** con `docker compose`, solo para el camino de rescate.
 - `datos/gran_concepcion_stream.parquet`, solo para el camino de rescate: `python3 generador.py --parquet` (no se versiona; también se puede copiar de otra máquina, pesa ~200 KB).
 
+## Para trabajar en casa
+
+1. Preparen el ambiente (arriba) y copien `.env.example` como `.env`.
+2. En el `.env`: `VPS_PASS` es la clave que les envía el profesor y `EQUIPO` un identificador **que no se repita con el de nadie más** (por ejemplo `nombre-apellido`): se usa como prefijo de sus claves en el Redis compartido (Parte 1) y como nombre de su grupo de consumidores, `curso-pmd-<EQUIPO>` (Parte 3).
+3. Si ya hicieron la Parte 1, ejecuten **Configuración** y **Parte 0** y sigan en la **Parte 2**. No reinicien el kernel entre la Parte 2 y la 3.
+4. Si el VPS no responde, el notebook cae solo al camino de rescate (necesita Docker y el parquet; ver abajo): todo funciona igual, con datos locales.
+
 ## Conexión: el `.env`
 
 ```bash
-cp .env.example .env     # y completar VPS_PASS con la clave que se da en clase (y EQUIPO)
+cp .env.example .env     # y completar VPS_PASS con la clave que entrega el profesor, y EQUIPO con un identificador ÚNICO (p. ej. nombre-apellido)
 ```
 
 El notebook lee host, puerto, clave y equipo desde ahí: la clave nunca queda en el código ni en git.
@@ -31,7 +38,7 @@ El notebook lee host, puerto, clave y equipo desde ahí: la clave nunca queda en
 |---|---|---|
 | Redis | `redis-stream.5.75.154.51.sslip.io:443`, con TLS; la clave se da en clase | `pmd-redis` en `localhost:6379` (`docker-compose.yml`) |
 | Fuente | `generador.py` corriendo en el servidor | el notebook reproduce el parquet |
-| Parte 3 | todo el curso en el mismo consumer group | 2–3 consumidores dentro del equipo |
+| Parte 3 | un consumer group propio (`curso-pmd-<EQUIPO>`) en el Redis compartido (en clase, todo el curso compartía un solo grupo) | 2–3 consumidores dentro del equipo |
 
 El notebook elige solo (Parte 0): prueba el VPS por 3 segundos y, si no conecta, levanta el Redis local. Ambos caminos usan `eventos()` de `generador.py` con la misma semilla, así que se ven idénticos.
 
@@ -43,7 +50,7 @@ redis-cli -h $H -p 443 --tls --sni $H -a <clave>     # probar la conexión a man
 docker compose up -d --wait                                              # camino de rescate a mano
 ```
 
-### Plan B: servidor de emergencia en la sala
+### Plan B: servidor de emergencia en la sala (solo para clases presenciales)
 
 Si el VPS falla, los equipos caen solos al camino de rescate y siguen trabajando. Mientras, el profesor levanta el mismo servidor (Redis con la misma ACL + generador) en su PC del laboratorio:
 
