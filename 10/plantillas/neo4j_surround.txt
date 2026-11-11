@@ -1,0 +1,19 @@
+# Laboratorio 10 · bonus (diapositiva 13): los dos textos del ReplaceText que va a Neo4j.
+#
+# ReplaceText: Replacement Strategy = Surround · Evaluation Mode = Entire text.
+# Copien CADA texto completo (es una sola línea larga) en la propiedad del mismo nombre.
+# El JSON que sale de QueryRecord es un arreglo [{…}, …]: estos textos lo envuelven como el
+# parámetro «filas» de una transacción de la API HTTP de Neo4j (POST /db/neo4j/tx/commit).
+#
+# Cuidado 1: en NiFi, ${…} es Expression Language. $filas NO lleva llaves, así que NiFi lo deja
+#            pasar tal cual y Neo4j lo lee como el parámetro filas.
+# Cuidado 2: la API de Neo4j responde 200 AUNQUE LA CONSULTA FALLE. El error viene adentro del JSON,
+#            en "errors". Mírenlo en el LogAttribute (Log Payload = true): tiene que decir "errors":[].
+# La comuna se busca con MATCH (ya existe: la cargó 01_cargar_grafo.cypher) y solo la relación
+# va con MERGE. Con MERGE del patrón completo, Cypher crearía una comuna repetida.
+
+== Text to Prepend ==
+{"statements":[{"statement":"UNWIND $filas AS f MERGE (s:Sensor {id: f.estacion_id}) SET s.tipo = f.tipo_sensor, s.n = f.n, s.promedio = f.promedio, s.ultimo_ts = f.ultimo_ts WITH s, f MATCH (c:Comuna {nombre: {CC:'Concepción', TAL:'Talcahuano', HUA:'Hualpén', SPP:'San Pedro de la Paz', CHI:'Chiguayante', PEN:'Penco', COR:'Coronel'}[split(f.estacion_id, '-')[0]]}) MERGE (s)-[:EN]->(c)","parameters":{"filas":
+
+== Text to Append ==
+}}]}

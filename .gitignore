@@ -30,8 +30,12 @@
 *.gpkg
 *.dump
 
+# Lab 10: el driver JDBC lo baja preparar_datos.py; no se versiona
+10/drivers/*.jar
+
 # Versiones docentes: soluciones y respuestas esperadas, no van al repo público
 *_docente.ipynb
+*_docente.py
 
 # Jupyter
 .ipynb_checkpoints/

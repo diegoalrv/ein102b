@@ -1,0 +1,90 @@
+# Laboratorio 10 — NiFi + Postgres + Redis en la misma red (y Neo4j, solo para el bonus).
+#
+#     python3 preparar_datos.py              # una vez: los seis CSV en pendientes/ y el JAR en drivers/
+#     docker compose pull                    # una vez, ANTES de clase (NiFi pesa ~2 GB)
+#     docker compose up -d --wait            # levantar y esperar a NiFi (1-3 min)
+#     open https://localhost:8443/nifi       # usuario admin · clave pmd2026pmd2026 (aceptar el certificado)
+#     docker compose --profile bonus up -d   # el bonus: agrega Neo4j
+#     docker compose --profile bonus down -v # apagar todo y borrar volúmenes (máquinas compartidas)
+#
+# NiFi ve las carpetas de esta máquina por adentro: ./entrada → /data/entrada, ./errores → /data/errores,
+# ./drivers → /opt/nifi/drivers. En las propiedades de NiFi siempre va la ruta de ADENTRO.
+# NiFi le habla a Postgres como postgres:5432 y a Redis como redis:6379 (nombres de servicio, no localhost).
+
+services:
+  nifi:
+    image: apache/nifi:2.12.0          # la última 2.x al armar el lab (11-nov-2026); amd64 y arm64
+    container_name: pmd-nifi
+    ports:
+      - "8443:8443"
+    environment:
+      SINGLE_USER_CREDENTIALS_USERNAME: admin
+      SINGLE_USER_CREDENTIALS_PASSWORD: pmd2026pmd2026   # >= 12 caracteres; con menos, NiFi inventa otra y la deja en el log
+      NIFI_JVM_HEAP_INIT: 512m
+      NIFI_JVM_HEAP_MAX: 1g
+    volumes:
+      - ./entrada:/data/entrada
+      - ./errores:/data/errores
+      - ./drivers:/opt/nifi/drivers
+    healthcheck:                       # `up --wait` espera a que la interfaz responda
+      # adentro, NiFi escucha en la IP del contenedor y no en 127.0.0.1; el certificado siempre trae «localhost»
+      test: ["CMD-SHELL", "curl -ksf -o /dev/null --resolve localhost:8443:$$(hostname -i) https://localhost:8443/nifi/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30                      # ~5 min: en máquinas lentas NiFi tarda
+      start_period: 60s
+    depends_on: [postgres, redis]
+
+  postgres:
+    image: postgis/postgis:16-3.4      # la misma de los labs 01-05: ya está en las máquinas
+    container_name: pmd-postgis
+    ports:
+      - "5433:5432"                    # para consultar desde la terminal; NiFi usa postgres:5432
+    environment:
+      POSTGRES_PASSWORD: pmd2026
+    volumes:
+      - pmd10-pgdata:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro   # crea la tabla eventos al iniciar con el volumen vacío
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    container_name: pmd-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]   # sin persistencia, como en el Lab 06
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  neo4j:                               # solo con --profile bonus
+    profiles: [bonus]
+    image: neo4j:5-community
+    container_name: pmd-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/pmd2026neo
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    volumes:
+      - pmd10-neo4jdata:/data          # el grafo se carga por stdin (README, Bonus): no hace falta montar import/
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p pmd2026neo 'RETURN 1' >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 15s
+      retries: 15
+      start_period: 15s
+
+volumes:
+  pmd10-pgdata:
+    name: pmd10-pgdata
+  pmd10-neo4jdata:
+    name: pmd10-neo4jdata
