@@ -58,7 +58,9 @@ def eventos_por_hora():
             parameters=(hora,))
         try:
             r = requests.post("http://n8n:5678/webhook/alerta-aire",
-                              json={"hora": hora, "estaciones": altos}, timeout=5)
+                              json={"hora": hora, "estaciones": [
+                                  {"estacion_id": e, "promedio": p} for e, p in altos]},
+                              timeout=5)
             print("n8n respondió:", r.status_code, r.text)
         except requests.RequestException as e:
             print("n8n no respondió:", e)     # el aviso no debe botar el DAG

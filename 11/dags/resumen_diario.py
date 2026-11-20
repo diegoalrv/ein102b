@@ -5,7 +5,7 @@ from airflow.sdk import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 PG = "pmd_postgres"                      # la misma conexión del DAG horario
-FILAS_DEL_DIA = 16 * 6                   # 16 estaciones × 6 horas (08:00 … 13:00) de eventos_por_hora
+HORAS_DEL_DIA = 16 * 6                   # filas horarias del día: 16 estaciones × 6 horas (08:00 … 13:00)
 
 @dag(
     schedule="0 3 * * *",                # cada noche a las 03:00
@@ -21,12 +21,12 @@ def resumen_diario():
     def verificar_horas(**context):
         # la ejecución de las 03:00 del 14-nov resume el día que terminó: el 13-nov
         dia = (context["logical_date"].in_timezone("America/Santiago") - timedelta(days=1)).date()
-        filas = PostgresHook(postgres_conn_id=PG).get_first(
+        n = PostgresHook(postgres_conn_id=PG).get_first(
             "SELECT count(*) FROM resumen_horario "
             "WHERE (hora AT TIME ZONE 'America/Santiago')::date = %s",
             parameters=(dia,))[0]
-        if filas < FILAS_DEL_DIA:        # falla: resumir_dia no corre (upstream_failed)
-            raise ValueError(f"faltan {FILAS_DEL_DIA - filas} filas de resumen horario del {dia}")
+        if n < HORAS_DEL_DIA:            # solo si terminó lo anterior: si no, resumir_dia no corre
+            raise ValueError(f"faltan {HORAS_DEL_DIA - n} filas de resumen horario del {dia}")
         return dia.isoformat()
 
     @task

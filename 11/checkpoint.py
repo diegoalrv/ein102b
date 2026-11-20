@@ -18,15 +18,15 @@ CONSULTA = """SELECT
 
 # (después de…, eventos, resumen_horario filas, sum(n), resumen_diario filas, sum(n), alertas)
 ESTADOS = [
-    ("el inicio (diapositivas 9 y 10)", 0, 0, 0, 0, 0, 0),
-    ("la diapositiva 11 (encendido con 1100 escondido: 5 verdes, 1 roja)", 35294, 80, 35269, 0, 0, 0),
-    ("la diapositiva 12 (archivo devuelto y Clear de la roja)", 42368, 96, 42344, 0, 0, 0),
-    ("la diapositiva 13 (Clear de las seis). Si están en n8n (diap. 14 y 15), "
+    ("el inicio (diapositivas 2 y 19)", 0, 0, 0, 0, 0, 0),
+    ("la diapositiva 20 (encendido con 1100 escondido: 5 verdes, 1 roja)", 35294, 80, 35269, 0, 0, 0),
+    ("la diapositiva 21 (archivo devuelto y Clear de la roja)", 42368, 96, 42344, 0, 0, 0),
+    ("la diapositiva 22 (Clear de las seis). Si están en n8n (diap. 23 y 24), "
      "las tablas no cambian: el avance se ve en Executions", 42368, 96, 42363, 0, 0, 0),
-    ("la diapositiva 16 (resumen_diario encendido), o la 17 ya reparada", 42368, 96, 42363, 16, 42363, 0),
-    ("la diapositiva 17, con la hora 10 borrada (verificar_horas tiene que quedar en rojo)",
+    ("la diapositiva 25 (resumen_diario encendido), o la 26 ya reparada", 42368, 96, 42363, 16, 42363, 0),
+    ("la diapositiva 26, con la hora 10 borrada (verificar_horas tiene que quedar en rojo)",
      42368, 80, 35298, 16, 42363, 0),
-    ("la diapositiva 18 (alertas en Postgres)", 42368, 96, 42363, 16, 42363, 6),
+    ("la diapositiva 27 (alertas en Postgres)", 42368, 96, 42363, 16, 42363, 6),
 ]
 CONTROL_HORA, CONTROL_DIA = "73.85", "74.02"   # CC-004: hora 13:00 y promedio del día
 
@@ -79,7 +79,7 @@ def principal():
     if rh_n > ev:
         print("  · sum(n) de resumen_horario > eventos: resumir está sumando en vez de reemplazar. Revisen el DO UPDATE.")
     if rd_n == 42344:
-        print("  · resumen_diario con 42.344: encendieron el DAG nocturno antes del Clear de las seis (diap. 13). "
+        print("  · resumen_diario con 42.344: encendieron el DAG nocturno antes del Clear de las seis (diap. 22). "
               "Clear de resumen_diario y queda bien.")
     if al > 6:
         print("  · alertas > 6: el nodo Postgres está insertando sin match (o con match por una sola columna).")

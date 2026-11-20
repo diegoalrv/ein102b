@@ -114,8 +114,8 @@
           "mappingMode": "defineBelow",
           "value": {
             "hora": "={{ $('Webhook').item.json.body.hora }}",
-            "estacion_id": "={{ $json[0] }}",
-            "promedio": "={{ $json[1] }}"
+            "estacion_id": "={{ $json.estacion_id }}",
+            "promedio": "={{ $json.promedio }}"
           },
           "matchingColumns": [
             "hora",

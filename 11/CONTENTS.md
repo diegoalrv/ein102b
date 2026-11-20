@@ -47,7 +47,7 @@ dependencia │resumir│     │resumir│     │resumir│     │resumir▲�
    ▼        │avisar │     │avisar │     │avisar │     │avisar ▲│    │avisar │     │avisar │
             └───────┘     └───────┘     └───────┘     └───────┘     └───────┘     └───────┘
              ejecución     ejecución                  la de las 12:00 busca eventos_1100.csv
-            (DAG run)                                 y no lo encuentra (diap. 11)
+            (DAG run)                                 y no lo encuentra (diap. 20)
 ```
 
 **Las piezas por dentro.** Airflow no es un programa, son cuatro procesos que comparten una base de datos:
@@ -188,13 +188,16 @@ def eventos_por_hora():
             parameters=(hora,))
         try:
             r = requests.post("http://n8n:5678/webhook/alerta-aire",
-                              json={"hora": hora, "estaciones": altos}, timeout=5)
+                              json={"hora": hora, "estaciones": [
+                                  {"estacion_id": e, "promedio": p} for e, p in altos]},
+                              timeout=5)
             print("n8n respondió:", r.status_code, r.text)
         except requests.RequestException as e:
             print("n8n no respondió:", e)     # el aviso no debe botar el DAG
 ```
 
-- `get_records`: una lista de filas. Cada fila es una **lista** `[estacion_id, promedio]`: `[["CC-004", 73.85]]`. (Esto importa en n8n, sección 8.)
+- `get_records`: una lista de filas; cada fila es una tupla `(estacion_id, promedio)`.
+- `[{"estacion_id": e, "promedio": p} for e, p in altos]`: convierte cada fila en un objeto con nombres, para que en n8n se lea `$json.estacion_id` y no una posición. Lo que llega a n8n: `{"hora": "2026-11-13T13:00:00-03:00", "estaciones": [{"estacion_id": "CC-004", "promedio": 73.85}]}`.
 - `http://n8n:5678`: n8n por el nombre del servicio, dentro de la red del compose.
 - `timeout=5`: si n8n no contesta en 5 s, se rinde.
 - `try / except`: si n8n está caído, la tarea solo deja una línea en el log y termina en verde. **El aviso nunca bota el DAG.** Si n8n está arriba pero el workflow no está publicado, n8n contesta igual, con un 404: el log dice `n8n respondió: 404 … not registered`.
@@ -212,7 +215,7 @@ eventos_por_hora()
 
 ```python
 PG = "pmd_postgres"                      # la misma conexión del DAG horario
-FILAS_DEL_DIA = 16 * 6                   # 16 estaciones × 6 horas (08:00 … 13:00) de eventos_por_hora
+HORAS_DEL_DIA = 16 * 6                   # filas horarias del día: 16 estaciones × 6 horas (08:00 … 13:00)
 
 @dag(
     schedule="0 3 * * *",                # cada noche a las 03:00
@@ -232,19 +235,19 @@ def resumen_diario():
     @task
     def verificar_horas(**context):
         dia = (context["logical_date"].in_timezone("America/Santiago") - timedelta(days=1)).date()
-        filas = PostgresHook(postgres_conn_id=PG).get_first(
+        n = PostgresHook(postgres_conn_id=PG).get_first(
             "SELECT count(*) FROM resumen_horario "
             "WHERE (hora AT TIME ZONE 'America/Santiago')::date = %s",
             parameters=(dia,))[0]
-        if filas < FILAS_DEL_DIA:        # falla: resumir_dia no corre (upstream_failed)
-            raise ValueError(f"faltan {FILAS_DEL_DIA - filas} filas de resumen horario del {dia}")
+        if n < HORAS_DEL_DIA:            # solo si terminó lo anterior: si no, resumir_dia no corre
+            raise ValueError(f"faltan {HORAS_DEL_DIA - n} filas de resumen horario del {dia}")
         return dia.isoformat()
 ```
 
 - `- timedelta(days=1)`: la ejecución de las 03:00 del 14-nov resume el día que terminó, el 13-nov.
 - `hora AT TIME ZONE 'America/Santiago'`: pasa la hora a hora de Chile antes de sacarle la fecha (si no, las horas cerca de medianoche caerían en el día equivocado).
 - `get_first`: la primera fila del resultado; `[0]`, su primera columna.
-- `raise ValueError(...)`: **esta es la dependencia «solo si terminó lo anterior»**. Si `eventos_por_hora` no dejó las 96 filas, la tarea falla, Airflow reintenta dos veces (por si el otro DAG solo iba atrasado) y, si sigue faltando, queda roja y `resumir_dia` queda en naranjo sin correr. Nadie recibe un resumen de un día incompleto.
+- `n < HORAS_DEL_DIA` / `raise ValueError(...)`: **esta es la dependencia «solo si terminó lo anterior»**. Si `eventos_por_hora` no dejó las 96 filas, la tarea falla, Airflow reintenta dos veces (por si el otro DAG solo iba atrasado) y, si sigue faltando, queda roja y `resumir_dia` queda en naranjo sin correr. Nadie recibe un resumen de un día incompleto.
 
 ```python
     @task
@@ -275,8 +278,8 @@ resumen_diario()
 - ***Backfill*.** Reprocesar **a propósito** un rango del pasado (por ejemplo, después de corregir un error). En el lab lo hacemos con *Clear*; Airflow también tiene una pestaña *Backfills* para crear ejecuciones de un rango.
 - **Idempotencia.** Correr una tarea dos veces deja lo mismo que correrla una. Es lo que hace seguro el *Clear*: `cargar` (con `DO NOTHING`) y `resumir` (con `DO UPDATE`) se pueden repetir sin daño. Es la misma idea de la C14: NiFi pedía destinos idempotentes; Airflow pide **tareas** idempotentes.
 - **Datos tardíos.** Que «la hora terminó» no significa que «llegaron todos sus datos». En el lab, `eventos_0900.csv` trae eventos con `ts` de las 08:59. Cuando la ejecución de las 09:00 resumió la hora 08, esos eventos todavía no estaban en la tabla: el resumen quedó corto. Los números:
-  - Después de reparar la hora 11 (diap. 12): `eventos` = 42.368, pero la suma de los resúmenes = **42.344**. Faltan 24.
-  - En total hay **26 tardíos** entre las horas 08 y 12 (5 · 3 · 6 · 7 · 5). La hora 11 se reprocesó al final (diap. 12) y ya vio sus 7; por eso faltan 24 y no 26.
+  - Después de reparar la hora 11 (diap. 21): `eventos` = 42.368, pero la suma de los resúmenes = **42.344**. Faltan 24.
+  - En total hay **26 tardíos** entre las horas 08 y 12 (5 · 3 · 6 · 7 · 5). La hora 11 se reprocesó al final (diap. 21) y ya vio sus 7; por eso faltan 24 y no 26.
   - *Clear* de las seis → **42.363**. Quedan **5** sin resumir: tienen `ts` en la hora **07**, antes del `start_date`, y ninguna ejecución cubre esa hora.
 - **Tres estrategias para los tardíos** (son decisiones de negocio, no técnicas):
   1. **Reprocesar las últimas N horas** cada vez (cada ejecución vuelve a resumir también la hora anterior).
@@ -309,8 +312,8 @@ n8n se parece a NiFi a primera vista (cajas y flechas), pero piensa distinto: Ni
 - **Webhook.** Recibe la llamada HTTP de Airflow. *HTTP Method* `POST` (Airflow manda datos); *Path* `alerta-aire` (la última parte de la URL); *Respond* `Using 'Respond to Webhook' Node`: la respuesta la decide un nodo más adelante (si no, n8n respondería apenas llega la llamada, sin saber si hay alerta). Lo que llegó queda en el ítem como `body`, junto con `headers` y `query`: por eso la lista es `$json.body.estaciones`.
 - **If.** Divide los ítems en dos salidas, `true` y `false`, según una condición. Aquí: `{{ $json.body.estaciones.length }}` (cuántas estaciones vienen) con el operador *Number → is greater than* `0`.
 - **Respond to Webhook.** Contesta la llamada que recibió el Webhook. *Respond With* `JSON` y el cuerpo fijo `{"alerta": true}` (o `false`). Responde **una** vez por ejecución.
-- **Split Out.** Toma un campo que es una lista y entrega **un ítem por elemento**. *Fields To Split Out* `body.estaciones`. Como cada estación viene como lista (`["CC-004", 73.85]`, sección 4.2), cada ítem queda así: `{"0": "CC-004", "1": 73.85}`. Por eso después se usa `$json[0]` y `$json[1]`.
-- **Postgres.** *Operation* `Insert or Update` (*upsert*): inserta la fila o, si ya existe una con la misma clave, la actualiza. *Columns to match on* `hora` **y** `estacion_id`: las mismas dos columnas de la clave primaria de `alertas`. Los valores: `hora` = `{{ $('Webhook').item.json.body.hora }}` (la hora no está en el ítem de *Split Out*: se la pedimos al Webhook), `estacion_id` = `{{ $json[0] }}`, `promedio` = `{{ $json[1] }}`. Con *Insert* a secas, el segundo *Clear* de `avisar` fallaría por la clave primaria; con *match* por una sola columna, la tabla crecería.
+- **Split Out.** Toma un campo que es una lista y entrega **un ítem por elemento**. *Fields To Split Out* `body.estaciones`. Como cada estación viene como objeto (sección 4.2), cada ítem queda así: `{"estacion_id": "CC-004", "promedio": 73.85}`.
+- **Postgres.** *Operation* `Insert or Update` (*upsert*): inserta la fila o, si ya existe una con la misma clave, la actualiza. *Columns to match on* `hora` **y** `estacion_id`: las mismas dos columnas de la clave primaria de `alertas`. Los valores: `hora` = `{{ $('Webhook').item.json.body.hora }}` (la hora no está en el ítem de *Split Out*: se la pedimos al Webhook), `estacion_id` = `{{ $json.estacion_id }}`, `promedio` = `{{ $json.promedio }}`. Con *Insert* a secas, el segundo *Clear* de `avisar` fallaría por la clave primaria; con *match* por una sola columna, la tabla crecería.
 
 ## 9. NiFi, Airflow o n8n
 
@@ -327,14 +330,14 @@ Cómo elegir: ¿el dato llega sin parar y hay que moverlo entre sistemas? → Ni
 
 | Lo que se ve | La causa |
 |---|---|
-| `FileNotFoundError: … /opt/airflow/data/eventos_1100.csv` en `buscar_archivo` | El archivo no está en `data/` (en la diap. 11, a propósito). |
+| `FileNotFoundError: … /opt/airflow/data/eventos_1100.csv` en `buscar_archivo` | El archivo no está en `data/` (en la diap. 20, a propósito). |
 | Aviso rojo *Dag Import Errors* | Un error de Python en un archivo de `dags/`: el mensaje dice la línea. |
 | Aparece 1 ejecución en vez de 6 | Falta `catchup=True` (en Airflow 3 viene apagado). |
 | `n8n respondió: 404 {"code":404,"message":"The requested webhook \"POST alerta-aire\" is not registered." …}` | El workflow no está publicado. |
 | `curl` a `/webhook-test/…` responde `404 … is not registered` con la pista *Click the 'Execute workflow' button* | La URL de prueba solo existe después de apretar **Execute**, para una llamada. |
-| `null value in column "estacion_id" of relation "alertas" violates not-null constraint` | En el nodo Postgres se usó `$json.estacion_id`: Airflow manda listas, es `$json[0]`. |
+| `null value in column "estacion_id" of relation "alertas" violates not-null constraint` | El valor de `estacion_id` en el nodo Postgres quedó vacío o mal escrito, o falta el *Split Out* antes. |
 | *There is a conflict with one of the webhooks* al publicar | Otro workflow publicado ya usa la ruta `alerta-aire`. |
-| `ValueError: faltan 16 filas de resumen horario del 2026-11-13` | `resumen_horario` no tiene las 96 filas del día: alguna hora falta o falló (diap. 17, a propósito). |
+| `ValueError: faltan 16 filas de resumen horario del 2026-11-13` | `resumen_horario` no tiene las 96 filas del día: alguna hora falta o falló (diap. 26, a propósito). |
 
 ## 11. Puente al proyecto
 

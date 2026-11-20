@@ -1,6 +1,6 @@
 # Laboratorio 11 — Clase 15 (Vie 20-nov): Airflow y n8n, orquestar los CSV de la C14
 
-> Segunda clase del bloque ETL. Usamos **los mismos seis CSV** de la C14 y la misma tabla `eventos` de Postgres, pero ahora no los mueve NiFi: los carga un DAG de Airflow, hora por hora, y n8n recibe el aviso. La teoría va primero en el deck; este README es la receta de la práctica, diapositiva por diapositiva (9 a 18). **No hay notebook:** después de cada paso, `python3 checkpoint.py` les dice si las tablas quedaron como deben. Material de estudio: [`CONTENTS.md`](CONTENTS.md) (léanlo si nunca han usado Airflow ni n8n: explica cada pieza, cada menú y cada línea de los DAGs).
+> Segunda clase del bloque ETL. Usamos **los mismos seis CSV** de la C14 y la misma tabla `eventos` de Postgres, pero ahora no los mueve NiFi: los carga un DAG de Airflow, hora por hora, y n8n recibe el aviso. La teoría va primero en el deck; este README es la receta de la práctica, diapositiva por diapositiva (2 y 19 a 27). **No hay notebook:** después de cada paso, `python3 checkpoint.py` les dice si las tablas quedaron como deben. Material de estudio: [`CONTENTS.md`](CONTENTS.md) (léanlo si nunca han usado Airflow ni n8n: explica cada pieza, cada menú y cada línea de los DAGs).
 
 *Libreto: `Clases/Clase 15 (2011)/Clase 15 (2011) — Libreto.md` · guía docente: `Clases/Clase 15 (2011)/Clase 15 (2011) — Laboratorio 11.md` (en la carpeta del curso, fuera de este repositorio).*
 
@@ -73,7 +73,7 @@ Los seis archivos de la C14, sin cambios: seis horas de los 16 sensores del 13-n
 | `eventos_1200.csv` | 7.200 | 7.074 |
 | `eventos_1300.csv` | 7.200 | 7.058 |
 
-**La columna `ts` es la que manda, no el nombre del archivo.** `eventos_0900.csv` trae algunos eventos con `ts` de las 08:59 que llegaron tarde (los tardíos del Lab 06). Eso va a importar en la diapositiva 13.
+**La columna `ts` es la que manda, no el nombre del archivo.** `eventos_0900.csv` trae algunos eventos con `ts` de las 08:59 que llegaron tarde (los tardíos del Lab 06). Eso va a importar en la diapositiva 22.
 
 ## La receta
 
@@ -82,7 +82,9 @@ Dos reglas para todos los pasos:
 - **Los comandos de terminal se escriben en `Laboratorios/11/`**, en su máquina (no dentro de un contenedor).
 - **En Airflow, *Clear* se hace desde el cuadrito de la tarea** en la vista *Grid*: clic en el cuadrito → botón ↻ arriba a la derecha (*Clear Task Instance*, «Limpiar Instancia de Tarea») → elegir las opciones → *Confirm*. Antes de confirmar, el diálogo dice cuántas tareas va a limpiar (*Affected Tasks*, «Tareas Afectadas»): úsenlo para revisar.
 
-### Diapositiva 9 — Levantar el stack
+### Diapositiva 2 — Levantar el stack
+
+Se hace **antes de la teoría**: así Airflow termina de arrancar mientras se ve la cátedra. Déjenlo corriendo; la práctica sigue en la diapositiva 19.
 
 ```bash
 docker compose up -d --wait
@@ -94,7 +96,7 @@ Abran <http://localhost:8080> (entra directo, sin login) y <http://localhost:567
 
 **Resultado esperado:** `docker compose ps` con los tres servicios `healthy`; en Airflow, la lista de DAGs con `eventos_por_hora` y `resumen_diario`, los dos **apagados**; n8n sin workflows; `✓ Calza con: el inicio`.
 
-### Diapositiva 10 — Leer el DAG
+### Diapositiva 19 — Leer el DAG
 
 Abran `dags/eventos_por_hora.py` en su editor (o, en Airflow, el DAG → pestaña *Code*). Son cuatro tareas en cadena: `buscar_archivo → cargar → resumir → avisar`. En Airflow, el DAG → vista *Graph* muestra la misma cadena.
 
@@ -102,7 +104,7 @@ Abran `dags/eventos_por_hora.py` en su editor (o, en Airflow, el DAG → pestañ
 
 **Resultado esperado:** la vista *Graph* con las cuatro cajas en fila, sin ejecuciones todavía.
 
-### Diapositiva 11 — Encenderlo, con un archivo perdido
+### Diapositiva 20 — Encenderlo, con un archivo perdido
 
 Antes de encender, alguien «pierde» el archivo de las 11:00:
 
@@ -119,9 +121,9 @@ python3 checkpoint.py
 
 > 🤔 **Antes de ejecutar:** ¿qué habría pasado en NiFi con el archivo perdido?
 
-**Resultado esperado:** 6 columnas (09:00 … 14:00): 5 verdes y la de las **12:00** con `buscar_archivo` en rojo y las otras tres tareas en naranjo (*upstream_failed*). `count` = **35.294** · `✓ Calza con: después de la diapositiva 11`.
+**Resultado esperado:** 6 columnas (09:00 … 14:00): 5 verdes y la de las **12:00** con `buscar_archivo` en rojo y las otras tres tareas en naranjo (*upstream_failed*). `count` = **35.294** · `✓ Calza con: después de la diapositiva 20`.
 
-### Diapositiva 12 — Reparar: devolver el archivo y *Clear*
+### Diapositiva 21 — Reparar: devolver el archivo y *Clear*
 
 ```bash
 mv escondido/eventos_1100.csv data/
@@ -135,9 +137,9 @@ docker exec pmd-postgis psql -U postgres -c \
 python3 checkpoint.py
 ```
 
-**Resultado esperado:** el *Grid* entero en verde. `eventos` = **42.368** (el mismo número del final de la C14) · `resumen_horario` = **96** filas (16 sensores × 6 horas) · `✓ Calza con: después de la diapositiva 12`.
+**Resultado esperado:** el *Grid* entero en verde. `eventos` = **42.368** (el mismo número del final de la C14) · `resumen_horario` = **96** filas (16 sensores × 6 horas) · `✓ Calza con: después de la diapositiva 21`.
 
-### Diapositiva 13 — Los datos tardíos
+### Diapositiva 22 — Los datos tardíos
 
 ```sql
 SELECT (SELECT count(*) FROM eventos) AS eventos,
@@ -156,9 +158,9 @@ docker exec pmd-postgis psql -U postgres -c \
   "SELECT hora, n, round(promedio::numeric, 2) FROM resumen_horario WHERE estacion_id = 'CC-004' ORDER BY hora;"
 ```
 
-**Resultado esperado:** antes del *Clear*, `eventos` = 42.368 y `en_resumenes` = **42.344**. Después: `en_resumenes` = **42.363** · `✓ Calza con: después de la diapositiva 13`. CC-004: 73.04 · 73.88 · 74.19 · 74.62 · 74.54 · **73.85** (08:00 → 13:00).
+**Resultado esperado:** antes del *Clear*, `eventos` = 42.368 y `en_resumenes` = **42.344**. Después: `en_resumenes` = **42.363** · `✓ Calza con: después de la diapositiva 22`. CC-004: 73.04 · 73.88 · 74.19 · 74.62 · 74.54 · **73.85** (08:00 → 13:00).
 
-### Diapositiva 14 — n8n: un workflow que recibe un aviso
+### Diapositiva 23 — n8n: un workflow que recibe un aviso
 
 En n8n: *Create workflow* (o el **+** de la barra izquierda). Cada nodo se agrega con el **+** y se busca por su nombre.
 
@@ -178,7 +180,7 @@ Para probar: botón **Execute** (abajo, al centro del lienzo). n8n se queda escu
 ```bash
 curl -X POST http://localhost:5678/webhook-test/alerta-aire \
   -H "Content-Type: application/json" \
-  -d '{"hora": "2026-11-13T13:00:00-03:00", "estaciones": [["CC-004", 73.85]]}'
+  -d '{"hora": "2026-11-13T13:00:00-03:00", "estaciones": [{"estacion_id": "CC-004", "promedio": 73.85}]}'
 ```
 
 Vuelvan a apretar **Execute** y repitan con `"estaciones": []`. La URL de prueba sirve para **una** llamada por cada *Execute*.
@@ -187,7 +189,7 @@ Ojo: el botón *Listen for test event* que aparece dentro del nodo Webhook prueb
 
 **Resultado esperado:** `{"alerta":true}` con CC-004 y `{"alerta":false}` con la lista vacía; en el lienzo, el camino recorrido en verde.
 
-### Diapositiva 15 — Publicar y conectar: Airflow avisa a n8n
+### Diapositiva 24 — Publicar y conectar: Airflow avisa a n8n
 
 En n8n: **Publish** (arriba a la derecha). El botón pasa a decir *Published* y desde ahí existe la URL de **producción**, `/webhook/alerta-aire`. Si cambian algo después, quedará en borrador hasta volver a publicar.
 
@@ -198,9 +200,9 @@ curl -X POST http://localhost:5678/webhook/alerta-aire \
   -H "Content-Type: application/json" -d '{"estaciones": []}'
 ```
 
-**Resultado esperado:** el log de `avisar` dice `n8n respondió: 200 {"alerta":true}`. En n8n, pestaña **Executions** (arriba, al centro): la llamada que llegó desde Airflow, con `estaciones = [["CC-004", 73.85]]`. Antes de publicar, ese mismo log decía `n8n respondió: 404 … not registered`.
+**Resultado esperado:** el log de `avisar` dice `n8n respondió: 200 {"alerta":true}`. En n8n, pestaña **Executions** (arriba, al centro): la llamada que llegó desde Airflow, con `estaciones = [{"estacion_id": "CC-004", "promedio": 73.85}]`. Antes de publicar, ese mismo log decía `n8n respondió: 404 … not registered`.
 
-### Diapositiva 16 — El DAG de las 03:00
+### Diapositiva 25 — El DAG de las 03:00
 
 Abran `dags/resumen_diario.py`: dos tareas, `verificar_horas → resumir_dia`, a las 03:00. `verificar_horas` revisa que estén las 96 filas horarias del día anterior; si faltan, **falla** y `resumir_dia` no corre. Es el «solo si terminó lo anterior» de la deuda de la C14.
 
@@ -214,9 +216,9 @@ docker exec pmd-postgis psql -U postgres -c \
 
 > 🤔 **Antes de ejecutar:** ¿por qué el promedio del día no es el promedio de los seis promedios horarios? Compárenlo para CHI-001.
 
-**Resultado esperado:** **una** ejecución (14-11 03:00), en verde. `resumen_diario` = 16 filas con `sum(n)` = 42.363 · CC-004 con `n` = 2.752 y 74.02 · CHI-001 65.73 · TAL-003 62.67 · COR-001 34.23 · `✓ Calza con: después de la diapositiva 16`.
+**Resultado esperado:** **una** ejecución (14-11 03:00), en verde. `resumen_diario` = 16 filas con `sum(n)` = 42.363 · CC-004 con `n` = 2.752 y 74.02 · CHI-001 65.73 · TAL-003 62.67 · COR-001 34.23 · `✓ Calza con: después de la diapositiva 25`.
 
-### Diapositiva 17 — Romperlo y repararlo
+### Diapositiva 26 — Romperlo y repararlo
 
 Alguien borra una hora del resumen horario:
 
@@ -235,9 +237,9 @@ python3 checkpoint.py
 
 Ahora reparen: en `eventos_por_hora`, clic en el cuadrito de `resumir` de la ejecución de las **11:00** (la que resume la hora 10) → ↻ → *Confirm*. Cuando quede verde, de nuevo *Clear* de `verificar_horas` en `resumen_diario`.
 
-**Resultado esperado, roto:** `verificar_horas` en rojo con `ValueError: faltan 16 filas de resumen horario del 2026-11-13`; `resumir_dia` en naranjo, sin correr · `✓ Calza con: … con la hora 10 borrada`. **Reparado:** las dos en verde · `resumen_horario` de vuelta en 96 filas (la hora 10 con `n` = 7.065) · `✓ Calza con: … o la 17 ya reparada`.
+**Resultado esperado, roto:** `verificar_horas` en rojo con `ValueError: faltan 16 filas de resumen horario del 2026-11-13`; `resumir_dia` en naranjo, sin correr · `✓ Calza con: … con la hora 10 borrada`. **Reparado:** las dos en verde · `resumen_horario` de vuelta en 96 filas (la hora 10 con `n` = 7.065) · `✓ Calza con: … o la 26 ya reparada`.
 
-### Diapositiva 18 — n8n guarda las alertas en Postgres
+### Diapositiva 27 — n8n guarda las alertas en Postgres
 
 En el mismo workflow de n8n, entre el **If** (salida `true`) y **Respond: alerta**, agreguen dos nodos:
 
@@ -249,8 +251,8 @@ En el mismo workflow de n8n, entre el **If** (salida `true`) y **Respond: alerta
 | | Schema / Table | `public` / `alertas` (*From list*) |
 | | Columns to match on | `hora` **y** `estacion_id` |
 | | Values to Send: `hora` | `{{ $('Webhook').item.json.body.hora }}` |
-| | Values to Send: `estacion_id` | `{{ $json[0] }}` |
-| | Values to Send: `promedio` | `{{ $json[1] }}` |
+| | Values to Send: `estacion_id` | `{{ $json.estacion_id }}` |
+| | Values to Send: `promedio` | `{{ $json.promedio }}` |
 
 La credencial se llama **Postgres PMD**. Cambien solo dos campos; el resto viene bien por defecto (Database `postgres`, User `postgres`, Port `5432`, SSL `Disable`):
 
@@ -259,7 +261,7 @@ La credencial se llama **Postgres PMD**. Cambien solo dos campos; el resto viene
 | Host | `postgres` (el nombre del servicio, no `localhost`) |
 | Password | `pmd2026` |
 
-¿Por qué `$json[0]` y `$json[1]`? Airflow manda cada estación como una lista `["CC-004", 73.85]`, no como un objeto. *Split Out* deja un ítem por estación con esa lista: la posición 0 es la estación y la 1 el promedio. La hora no viene en la lista: se la pedimos al nodo **Webhook** con `$('Webhook')`.
+Airflow manda cada estación como un objeto, `{"estacion_id": "CC-004", "promedio": 73.85}`. *Split Out* deja un ítem por estación, así que `$json.estacion_id` y `$json.promedio` son los de esa estación. La hora no viene en cada estación: se la pedimos al nodo **Webhook** con `$('Webhook')`.
 
 **Publish** de nuevo. En Airflow, clic en el cuadrito de `avisar` de las **09:00** → ↻ → marquen *Future* → *Affected Tasks: 6* → *Confirm*.
 
@@ -272,7 +274,7 @@ Repitan el mismo *Clear* de las seis `avisar` y vuelvan a correr `checkpoint.py`
 
 > 🤔 **Antes de ejecutar:** ¿por qué *Insert or Update* y no *Insert* a secas?
 
-**Resultado esperado:** `alertas` = **6** filas, todas de CC-004: 73.04 · 73.88 · 74.19 · 74.62 · 74.54 · 73.85 (08:00 → 13:00) · `✓ Calza con: después de la diapositiva 18`. Tras el segundo *Clear*, siguen siendo **6**.
+**Resultado esperado:** `alertas` = **6** filas, todas de CC-004: 73.04 · 73.88 · 74.19 · 74.62 · 74.54 · 73.85 (08:00 → 13:00) · `✓ Calza con: después de la diapositiva 27`. Tras el segundo *Clear*, siguen siendo **6**.
 
 ## Checkpoint
 
@@ -280,16 +282,16 @@ Repitan el mismo *Clear* de las seis `avisar` y vuelvan a correr `checkpoint.py`
 
 | Después de… | `eventos` | `resumen_horario` filas · `sum(n)` | `resumen_diario` filas · `sum(n)` | `alertas` |
 |---|---|---|---|---|
-| El inicio (diap. 9–10) | 0 | 0 · 0 | 0 · 0 | 0 |
-| Diap. 11 · encender con `1100` escondido | 35.294 | 80 · 35.269 | 0 · 0 | 0 |
-| Diap. 12 · devolver el archivo y *Clear* de la roja | 42.368 | 96 · 42.344 | 0 · 0 | 0 |
-| Diap. 13 · *Clear* de las seis | 42.368 | 96 · **42.363** | 0 · 0 | 0 |
-| Diap. 16 · `resumen_diario` encendido | 42.368 | 96 · 42.363 | 16 · 42.363 | 0 |
-| Diap. 17 · tras el `DELETE` de la hora 10 | 42.368 | 80 · 35.298 | 16 · 42.363 | 0 |
-| Diap. 17 · reparado | 42.368 | 96 · 42.363 | 16 · 42.363 | 0 |
-| Diap. 18 · alertas en Postgres | 42.368 | 96 · 42.363 | 16 · 42.363 | **6** |
+| El inicio (diap. 2 y 19) | 0 | 0 · 0 | 0 · 0 | 0 |
+| Diap. 20 · encender con `1100` escondido | 35.294 | 80 · 35.269 | 0 · 0 | 0 |
+| Diap. 21 · devolver el archivo y *Clear* de la roja | 42.368 | 96 · 42.344 | 0 · 0 | 0 |
+| Diap. 22 · *Clear* de las seis | 42.368 | 96 · **42.363** | 0 · 0 | 0 |
+| Diap. 25 · `resumen_diario` encendido | 42.368 | 96 · 42.363 | 16 · 42.363 | 0 |
+| Diap. 26 · tras el `DELETE` de la hora 10 | 42.368 | 80 · 35.298 | 16 · 42.363 | 0 |
+| Diap. 26 · reparado | 42.368 | 96 · 42.363 | 16 · 42.363 | 0 |
+| Diap. 27 · alertas en Postgres | 42.368 | 96 · 42.363 | 16 · 42.363 | **6** |
 
-Las diapositivas 14 y 15 no cambian las tablas: el avance se ve en *Executions* de n8n. Valores de control: CC-004 a las 13:00 = 73.85; en el día = 74.02.
+Las diapositivas 23 y 24 no cambian las tablas: el avance se ve en *Executions* de n8n. Valores de control: CC-004 a las 13:00 = 73.85; en el día = 74.02.
 
 ## Si se atrasan
 
@@ -297,8 +299,8 @@ Las diapositivas 14 y 15 no cambian las tablas: el avance se ve en *Executions* 
 
 **En n8n**, los workflows terminados están en `n8n/`:
 
-1. *Create workflow* → menú **⋯** (arriba, junto al nombre) → *Import* → *From file* → `n8n/alerta_aire.json` (diap. 14) o `n8n/alerta_aire_postgres.json` (diap. 18).
-2. Solo el segundo: abran el nodo **Postgres** y en *Credential* elijan «Postgres PMD» o créenla (tabla de la diap. 18). Las credenciales **no viajan** en el archivo.
+1. *Create workflow* → menú **⋯** (arriba, junto al nombre) → *Import* → *From file* → `n8n/alerta_aire.json` (diap. 23) o `n8n/alerta_aire_postgres.json` (diap. 27).
+2. Solo el segundo: abran el nodo **Postgres** y en *Credential* elijan «Postgres PMD» o créenla (tabla de la diap. 27). Las credenciales **no viajan** en el archivo.
 3. **Publish**. Solo **un** workflow publicado puede usar la ruta `alerta-aire`: si ya tenían otro publicado, ábranlo y despublíquenlo primero (flecha junto a *Published* → *Unpublish*), o n8n reclama un conflicto de webhook.
 
 ## Problemas comunes
@@ -313,12 +315,12 @@ Las diapositivas 14 y 15 no cambian las tablas: el avance se ve en *Executions* 
 | Aparecen más o menos de 6 ejecuciones | Revisen `start_date`, `end_date` y `catchup=True` en el DAG. |
 | Las ejecuciones se ven como 12:00 … 17:00 | La interfaz está en UTC: reloj de la barra izquierda → *Select Timezone* → `America/Santiago`. |
 | `count` de `eventos` > 42.368 | No deduplicó: revisen la clave primaria en `sql/01_tablas.sql`. |
-| `resumen_diario` suma 42.344 | Encendieron el DAG nocturno antes del *Clear* de las seis (diap. 13): *Clear* de `verificar_horas` en `resumen_diario`. |
+| `resumen_diario` suma 42.344 | Encendieron el DAG nocturno antes del *Clear* de las seis (diap. 22): *Clear* de `verificar_horas` en `resumen_diario`. |
 | El *Clear* de las seis dejó roja la de las 12:00 | Hicieron el *Clear* antes de devolver el archivo: `mv escondido/eventos_1100.csv data/` y repitan. |
 | El log de `avisar` dice `n8n respondió: 404 … not registered` | El workflow no está publicado (o se editó y no se volvió a publicar): **Publish**. |
 | `curl` a `/webhook-test/…` da 404 | La URL de prueba solo existe mientras el lienzo espera: aprieten **Execute** antes de cada `curl`. |
 | `curl` a `/webhook-test/…` da 200 vacío | Usaron *Listen for test event* dentro del nodo: prueba solo el Webhook. Usen **Execute** del lienzo. |
-| El nodo Postgres falla con *null value in column "estacion_id"* | Usaron `{{ $json.estacion_id }}`: Airflow manda listas. Es `{{ $json[0] }}` y `{{ $json[1] }}`. |
+| El nodo Postgres falla con *null value in column "estacion_id"* | El valor de `estacion_id` quedó vacío o mal escrito (`{{ $json.estacion_id }}`), o falta el *Split Out* antes del Postgres. |
 | `alertas` crece con cada *Clear* | El nodo Postgres quedó en *Insert*, o con *match* por una sola columna: *Insert or Update* con `hora` **y** `estacion_id`. |
 | *Publish* reclama un conflicto de webhook | Otro workflow publicado usa la misma ruta `alerta-aire`: despublíquenlo primero. |
 | La máquina se arrastra | `docker stats`. Airflow solo usa ~2 GB; si hay algo del Lab 10 arriba, bájenlo. |
@@ -343,6 +345,6 @@ Apaga todo y borra los volúmenes (`pmd11-pgdata` y `pmd11-n8ndata`): las tablas
 | `dags/eventos_por_hora.py` | el DAG horario: `buscar_archivo → cargar → resumir → avisar` |
 | `dags/resumen_diario.py` | el DAG de las 03:00: `verificar_horas → resumir_dia` |
 | `sql/01_tablas.sql` | `eventos`, `resumen_horario`, `resumen_diario` y `alertas`; las crea el compose |
-| `n8n/alerta_aire.json` | el workflow de la diap. 14, para importarlo si se atrasan |
-| `n8n/alerta_aire_postgres.json` | el workflow de la diap. 18 (sin la clave: la credencial se elige al importar) |
+| `n8n/alerta_aire.json` | el workflow de la diap. 23, para importarlo si se atrasan |
+| `n8n/alerta_aire_postgres.json` | el workflow de la diap. 27 (sin la clave: la credencial se elige al importar) |
 | `data/` | los seis CSV que deja `preparar_datos.py` (no se versionan) |
