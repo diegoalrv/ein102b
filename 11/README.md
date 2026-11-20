@@ -114,6 +114,8 @@ mkdir -p escondido && mv data/eventos_1100.csv escondido/
 
 Enciendan `eventos_por_hora` con su interruptor (en la lista de DAGs, o arriba a la derecha en la página del DAG) y miren la vista *Grid*: columnas = ejecuciones, filas = tareas. En un minuto aparecen las seis. Hagan clic en el cuadrito rojo y miren su log: arriba, *Task Tries* («Intentos de Tarea») muestra los tres intentos (1 + 2 reintentos, con 15 s entre ellos) y el `FileNotFoundError`.
 
+Ojo con el nombre de la ejecución (arriba, *Dag Run*): va en **UTC**. `scheduled__2026-11-13T12:00:00+00:00` es la de las **09:00** hora de Chile; la de las 12:00 es `…T15:00:00+00:00`. Guíense por la columna del *Grid*, no por ese nombre.
+
 ```bash
 docker exec pmd-postgis psql -U postgres -c "SELECT count(*) FROM eventos;"
 python3 checkpoint.py
@@ -314,6 +316,7 @@ Las diapositivas 23 y 24 no cambian las tablas: el avance se ve en *Executions* 
 | Faltan tablas (`relation "eventos" does not exist`) | Postgres partió con un volumen viejo: `docker compose down -v` y `up -d --wait`. |
 | Aparecen más o menos de 6 ejecuciones | Revisen `start_date`, `end_date` y `catchup=True` en el DAG. |
 | Las ejecuciones se ven como 12:00 … 17:00 | La interfaz está en UTC: reloj de la barra izquierda → *Select Timezone* → `America/Santiago`. |
+| Abrieron «la de las 12:00» y está en verde | El nombre de la ejecución (*Dag Run*: `scheduled__…T12:00:00+00:00`) está en UTC: esa es la de las 09:00 hora de Chile. La de las 12:00 es `…T15:00:00+00:00`, la 4ª columna del *Grid*. |
 | `count` de `eventos` > 42.368 | No deduplicó: revisen la clave primaria en `sql/01_tablas.sql`. |
 | `resumen_diario` suma 42.344 | Encendieron el DAG nocturno antes del *Clear* de las seis (diap. 22): *Clear* de `verificar_horas` en `resumen_diario`. |
 | El *Clear* de las seis dejó roja la de las 12:00 | Hicieron el *Clear* antes de devolver el archivo: `mv escondido/eventos_1100.csv data/` y repitan. |
