@@ -1,0 +1,88 @@
+# Laboratorio 11 — Airflow + Postgres + n8n en la misma red.
+#
+#     python3 preparar_datos.py          # una vez: los seis CSV de la C14 en data/
+#     docker compose pull                # una vez, ANTES de clase (Airflow pesa más de 1 GB)
+#     docker compose up -d --wait        # levantar y esperar (Airflow tarda 1-2 min en arrancar)
+#     open http://localhost:8080         # Airflow, sin login (solo para el lab)
+#     open http://localhost:5678         # n8n
+#     docker compose down -v             # apagar todo y borrar volúmenes (máquinas compartidas)
+#
+# Airflow ve ./dags y ./data por adentro: /opt/airflow/dags y /opt/airflow/data.
+# Dentro de la red, Airflow le habla a Postgres como postgres:5432 y a n8n como n8n:5678.
+
+services:
+  airflow:
+    image: apache/airflow:3.4.0          # salió el 06-nov-2026; amd64 y arm64
+    container_name: pmd-airflow
+    command: standalone                  # api-server + scheduler + dag-processor + triggerer
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"   # sin login: solo para el lab
+      AIRFLOW_CONN_PMD_POSTGRES: postgresql://postgres:pmd2026@postgres:5432/postgres
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+    healthcheck:                         # `up --wait` espera a que el api-server responda
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30                        # ~5 min: en máquinas lentas Airflow tarda
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgis/postgis:16-3.4        # la misma de los labs 01-05 y 10: ya está en las máquinas
+    container_name: pmd-postgis
+    ports:
+      - "5433:5432"                      # para consultar desde la terminal; Airflow y n8n usan postgres:5432
+    environment:
+      POSTGRES_PASSWORD: pmd2026
+    volumes:
+      - pmd11-pgdata:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro   # crea las cuatro tablas al iniciar con el volumen vacío
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  n8n:
+    image: n8nio/n8n:2.48.6              # la 2.x estable al armar el lab (19-nov-2026); amd64 y arm64
+    container_name: pmd-n8n
+    ports:
+      - "5678:5678"
+    environment:
+      GENERIC_TIMEZONE: America/Santiago
+      TZ: America/Santiago
+      # la cuenta de dueño ya viene creada: pmd@usm.cl · Pmd2026pmd2026 (n8n pide la clave como hash bcrypt)
+      N8N_INSTANCE_OWNER_MANAGED_BY_ENV: "true"
+      N8N_INSTANCE_OWNER_EMAIL: pmd@usm.cl
+      N8N_INSTANCE_OWNER_FIRST_NAME: PMD
+      N8N_INSTANCE_OWNER_LAST_NAME: USM
+      N8N_INSTANCE_OWNER_PASSWORD_HASH: "$$2a$$10$$mZjakx4Lc2EgNUPamJhueeo5wu.oRsB7ikkj0E1gouDsz4YB.9pSm"
+      # las máquinas no salen a Internet: nada de telemetría, plantillas ni avisos de versión
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_TEMPLATES_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_DYNAMIC_BANNERS_ENABLED: "false"
+      N8N_HIRING_BANNER_ENABLED: "false"
+      N8N_SECURE_COOKIE: "false"         # http://localhost sin HTTPS
+    volumes:
+      - pmd11-n8ndata:/home/node/.n8n
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  pmd11-pgdata:
+    name: pmd11-pgdata
+  pmd11-n8ndata:
+    name: pmd11-n8ndata

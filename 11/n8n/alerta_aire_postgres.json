@@ -1,0 +1,235 @@
+{
+  "id": "alertaAirePg0001",
+  "name": "Alerta aire → Postgres",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alerta-aire",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6f1d3c1e-1b1a-4d7e-9a51-0b0000000000",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "2b7c5c0e-7d0e-4f3a-8a11-b1e2b1e2b1e2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6f1d3c1e-1b1a-4d7e-9a51-0b0000000001",
+              "leftValue": "={{ $json.body.estaciones.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6f1d3c1e-1b1a-4d7e-9a51-0b0000000001",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"alerta\": true}",
+        "options": {}
+      },
+      "id": "6f1d3c1e-1b1a-4d7e-9a51-0b0000000002",
+      "name": "Respond: alerta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        880,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"alerta\": false}",
+        "options": {}
+      },
+      "id": "6f1d3c1e-1b1a-4d7e-9a51-0b0000000003",
+      "name": "Respond: todo bien",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        440,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.estaciones",
+        "options": {}
+      },
+      "id": "6f1d3c1e-1b1a-4d7e-9a51-0b0000000005",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        440,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "alertas",
+          "mode": "list",
+          "cachedResultName": "alertas"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "hora": "={{ $('Webhook').item.json.body.hora }}",
+            "estacion_id": "={{ $json[0] }}",
+            "promedio": "={{ $json[1] }}"
+          },
+          "matchingColumns": [
+            "hora",
+            "estacion_id"
+          ],
+          "schema": [
+            {
+              "id": "hora",
+              "displayName": "hora",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "estacion_id",
+              "displayName": "estacion_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "promedio",
+              "displayName": "promedio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "6f1d3c1e-1b1a-4d7e-9a51-0b0000000006",
+      "name": "Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        660,
+        -100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PostgresPMD00001",
+          "name": "Postgres PMD"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: todo bien",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres": {
+      "main": [
+        [
+          {
+            "node": "Respond: alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}

@@ -16,6 +16,7 @@ Código e instrucciones de los laboratorios del curso. Un directorio por laborat
 | [`08/`](08/) | Vie 23-oct-2026 | Neo4j I: el grafo de propiedades y Cypher — patrones de uno y varios saltos, CREATE/MERGE — sobre una red de paradas del Gran Concepción |
 | [`09/`](09/) | Vie 30-oct-2026 | Neo4j II: shortestPath y caminos ponderados con reduce, agregaciones y NOT EXISTS, PROFILE e índices, carga idempotente con LOAD CSV + MERGE |
 | [`10/`](10/) | Vie 13-nov-2026 | NiFi: FlowFiles y colas; archivos que llegan a una carpeta → Postgres sin duplicar y Redis con el estado actual; back-pressure, reintentos y Data Provenance |
+| [`11/`](11/) | Vie 20-nov-2026 | Airflow y n8n: un DAG horario sobre los CSV de la C14 (catchup, Clear, datos tardíos), un DAG nocturno que espera al anterior, y un webhook de n8n que guarda alertas en Postgres |
 
 ## Empezar
 
@@ -23,7 +24,7 @@ Código e instrucciones de los laboratorios del curso. Un directorio por laborat
 git clone https://github.com/diegoalrv/ein102b.git && cd ein102b/01 && python3 generar_muestras.py
 ```
 
-Los datos no están versionados: el `.gitignore` excluye `*.csv`, `*.ndjson` y `*.geojson`, y cada laboratorio trae su propio generador con semilla fija. El generador verifica lo que produce y falla ruidosamente si algo no cuadra, así que si termina sin la línea `Verificación OK`, no sigas. Las instrucciones completas están en el README de cada laboratorio. (El Lab 02 no tiene datos propios: reutiliza la muestra A del Lab 01. El Lab 03 tampoco genera nada: usa datos públicos reales de datos.gob.cl, que se descargan una vez y se preparan con `preparar_datos.py`. El Lab 04 genera sus 500.000 puntos dentro de PostgreSQL y reutiliza el escenario de los Labs 01 y 03. El Lab 05 usa el extracto de Chile de OpenStreetMap, que se descarga una vez de Geofabrik y se recorta con su propio `preparar_datos.py`; además reutiliza los Labs 01 y 03. El Lab 10 genera sus seis CSV con el generador del Lab 06.)
+Los datos no están versionados: el `.gitignore` excluye `*.csv`, `*.ndjson` y `*.geojson`, y cada laboratorio trae su propio generador con semilla fija. El generador verifica lo que produce y falla ruidosamente si algo no cuadra, así que si termina sin la línea `Verificación OK`, no sigas. Las instrucciones completas están en el README de cada laboratorio. (El Lab 02 no tiene datos propios: reutiliza la muestra A del Lab 01. El Lab 03 tampoco genera nada: usa datos públicos reales de datos.gob.cl, que se descargan una vez y se preparan con `preparar_datos.py`. El Lab 04 genera sus 500.000 puntos dentro de PostgreSQL y reutiliza el escenario de los Labs 01 y 03. El Lab 05 usa el extracto de Chile de OpenStreetMap, que se descarga una vez de Geofabrik y se recorta con su propio `preparar_datos.py`; además reutiliza los Labs 01 y 03. El Lab 10 genera sus seis CSV con el generador del Lab 06. El Lab 11 reutiliza los seis CSV del Lab 10.)
 
 ## Requisitos
 
@@ -37,6 +38,7 @@ Los datos no están versionados: el `.gitignore` excluye `*.csv`, `*.ndjson` y `
 - Lab 08: el driver `neo4j` (`pip install -r 08/requirements.txt`) y la imagen `neo4j:5-community` (~350 MB de descarga, ~1 GB en disco; `docker pull neo4j:5-community` antes de abrir el notebook)
 - Lab 09: lo mismo que el Lab 08 (`pip install -r 09/requirements.txt` y la imagen `neo4j:5-community`)
 - Lab 10: solo Docker. Las imágenes `apache/nifi:2.12.0`, `postgis/postgis:16-3.4` y `redis:7-alpine` (`docker compose pull` en `10/`, ~1,3 GB de descarga y ~3,3 GB en disco), y `neo4j:5-community` para el bonus. `python3 preparar_datos.py` en `10/` genera los CSV (usa `06/generador.py`) y baja el driver JDBC de PostgreSQL.
+- Lab 11: solo Docker. Las imágenes `apache/airflow:3.4.0`, `postgis/postgis:16-3.4` y `n8nio/n8n:2.48.6` (`docker compose pull` en `11/`, ~1 GB de descarga y ~5,5 GB en disco; Postgres ya está del Lab 10). `python3 preparar_datos.py` en `11/` copia los seis CSV del Lab 10 (y los genera con `10/preparar_datos.py` si faltan).
 
 ## Versión docente
 
